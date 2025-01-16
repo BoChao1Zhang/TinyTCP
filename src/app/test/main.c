@@ -3,9 +3,9 @@
 #include "net.h"
 #include "dbg.h"
 #include "sys_plat.h"
-
 #include "netif_pcap.h"
 #include "nlist.h"
+#include "mblock.h"
 
 net_err_t netdev_init() {
 	netif_pcap_open();
@@ -18,7 +18,7 @@ typedef struct _tnode_t {
 	nlist_node_t node;
 } tnode_t;
 
-void nlist_test() {
+void nlist_test(void) {
 	#define NODE_CNT 4
 
 	tnode_t node[NODE_CNT];
@@ -83,8 +83,29 @@ void nlist_test() {
 
 }
 
+void mblock_test(void) {
+	mblock_t blist;
+	static uint8_t buffer[10][100];
+
+	mblock_init(&blist,buffer,100,10,NLOKCER_THREAD);
+
+	void* temp[10];
+	for (int i = 0;i<10;i++) {
+		temp[i] = mblock_alloc(&blist,0);
+		plat_printf("block: %p,free_count: %d\n",temp[i],mblock_free_cnt(&blist));
+	}
+
+	for (int i = 0;i<10;i++) {
+		mblock_free(&blist,temp[i]);
+		plat_printf("free count: %d\n",mblock_free_cnt(&blist));
+	}
+
+
+}
+
 void basic_test(void) {
-	nlist_test();
+	// nlist_test();
+	mblock_test();
 }
 
 
