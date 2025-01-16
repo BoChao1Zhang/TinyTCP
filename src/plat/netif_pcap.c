@@ -16,7 +16,7 @@ void recv_thread(void * arg) {
 }
 
 void xmit_thread(void * arg) {
-    plat_printf("recv thread is running...\n");
+    plat_printf("xmit thread is running...\n");
 
     while (1) {
         sys_sleep(10);
