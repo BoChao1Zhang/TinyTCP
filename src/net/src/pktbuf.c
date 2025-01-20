@@ -84,6 +84,11 @@ static pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
     return nlist_entry(first, pktblk_t, node);
 }
 
+pktblk_t *pktbuf_last_blk(pktbuf_t *buf) {
+    nlist_node_t *last = nlist_last(&buf->blk_list);
+    return nlist_entry(last, pktblk_t, node);
+}
+
 static void pktblk_free(pktblk_t *block) {
     mblock_free(&pktblk_mblock, block);
 }
@@ -222,20 +227,18 @@ net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont) {
         buf->total_size += resv_size;
         size -= resv_size;
 
-        block = pktblk_alloc_list(size,1);
+        block = pktblk_alloc_list(size, 1);
         if (!block) {
-            dbg_error(DBG_BUF,"no buffer size:%d",size);
+            dbg_error(DBG_BUF, "no buffer size:%d", size);
             return NET_ERR_NONE;
         }
     }
 
-    pktbuf_insert_blk_list(buf,block,0);
+    pktbuf_insert_blk_list(buf, block, 0);
     display_check_buf(buf);
 
     return NET_ERR_OK;
-
 }
-
 
 
 net_err_t pktbuf_remove_header(pktbuf_t *buf, int size) {
@@ -257,6 +260,80 @@ net_err_t pktbuf_remove_header(pktbuf_t *buf, int size) {
         buf->total_size -= cur_size;
 
         block = next_blk;
+    }
+
+    display_check_buf(buf);
+    return NET_ERR_OK;
+}
+
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
+    if (to_size == buf->total_size) {
+        return NET_ERR_OK;
+    }
+
+    if (buf->total_size == 0) {
+        pktblk_t *blk = pktblk_alloc_list(to_size, 0);
+        if (!blk) {
+            dbg_error(DBG_BUF, "no block\n");
+            return NET_ERR_MEM;
+        }
+    } else if (to_size == 0) {
+        pktblk_free_list(pktbuf_first_blk(buf));
+        buf->total_size = 0;
+        nlist_init(&buf->blk_list);
+    } else if (to_size >= buf->total_size) {
+        pktblk_t *tail_blk = pktbuf_last_blk(buf);
+
+        int inc_size = to_size - buf->total_size;
+        int remain_size = cur_blk_tail_free(tail_blk);
+        if (remain_size >= inc_size) {
+            tail_blk->size += inc_size;
+            buf->total_size += inc_size;
+        } else {
+            pktblk_t *new_blks = pktblk_alloc_list(inc_size - remain_size, 0);
+            if (!new_blks) {
+                dbg_error(DBG_BUF, "no block\n");
+                return NET_ERR_MEM;
+            }
+            tail_blk->size += remain_size;
+            buf->total_size += remain_size;
+            pktbuf_insert_blk_list(buf, new_blks, 1);
+        }
+    } else {
+        // 缩减尾部，整体变短
+        int total_size = 0;
+
+        // 遍历到达需要保留的最后一个缓存块
+        pktblk_t* tail_blk;
+        for (tail_blk = pktbuf_first_blk(buf); tail_blk; tail_blk = pktbuf_blk_next(tail_blk)) {
+            total_size += tail_blk->size;
+            if (total_size >= to_size) {
+                break;
+            }
+        }
+
+        if (tail_blk == (pktblk_t*)0) {
+            return NET_ERR_SIZE;
+        }
+
+        // 减掉后续所有块链中的容量
+        pktblk_t * curr_blk = pktbuf_blk_next(tail_blk);
+        total_size = 0;
+        while (curr_blk) {
+            // 先取后续的结点
+            pktblk_t * next_blk = pktbuf_blk_next(curr_blk);
+
+            // 删除当前block
+            nlist_remove(&buf->blk_list, &curr_blk->node);
+            pktblk_free(curr_blk);
+
+            total_size += curr_blk->size;
+            curr_blk = next_blk;
+        }
+
+        // 调整tail_blk的大小
+        tail_blk->size -= buf->total_size - total_size - to_size;
+        buf->total_size = to_size;
     }
 
     display_check_buf(buf);

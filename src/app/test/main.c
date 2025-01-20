@@ -130,7 +130,10 @@ void pktbuf_test(void) {
 	pktbuf_resize(buf,32);
 	pktbuf_resize(buf,288);
 	pktbuf_resize(buf,4922);
-
+	pktbuf_resize(buf,1921);
+	pktbuf_resize(buf,288);
+	pktbuf_resize(buf,0);
+	pktbuf_free(buf);
 
 
 }

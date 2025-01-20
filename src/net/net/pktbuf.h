@@ -30,13 +30,12 @@ pktbuf_t *pktbuf_alloc(int size);
 void pktbuf_free(pktbuf_t *pktbuf);
 net_err_t pktbuf_add_header(pktbuf_t* buf,int size,int cont);
 net_err_t pktbuf_remove_header(pktbuf_t*buf,int size);
-net_err_t pktbuf_resize(pktbuf_t* buf,int size);
+net_err_t pktbuf_resize(pktbuf_t* buf,int to_size);
 
 //pkt block
 pktblk_t *pktbuf_blk_next(pktblk_t *pktblk);
-
 pktblk_t *pktbuf_first_blk(pktbuf_t *buf);
-
+pktblk_t *pktbuf_last_blk(pktbuf_t *buf);
 inline int cur_blk_tail_free(pktblk_t *blk) {
     return (blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size);
 }
