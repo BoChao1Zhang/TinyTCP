@@ -6,10 +6,10 @@
 #define NLOCKER_H
 
 #include "net_err.h"
-#include "sys_plat.h"
+#include "sys.h"
 
 typedef enum _nlocker_type_t {
-    NLOCKER_NONE,       //用于自己的资源，不需要互斥锁
+    NLOCKER_NONE,       //用于arm，没有提供互斥锁
     NLOKCER_THREAD,     //用于线程共享的资源，需要互斥锁
 }nlocker_type_t;
 
