@@ -6,6 +6,7 @@
 #include "netif_pcap.h"
 #include "nlist.h"
 #include "mblock.h"
+#include "pktbuf.h"
 
 net_err_t netdev_init() {
 	netif_pcap_open();
@@ -103,9 +104,41 @@ void mblock_test(void) {
 
 }
 
+void pktbuf_test(void) {
+	pktbuf_t *pktbuf = pktbuf_alloc(2000);
+	pktbuf_free(pktbuf);
+
+	pktbuf_t *buf = pktbuf_alloc(2000);
+	for (int i = 0;i<16;i++) {
+		pktbuf_add_header(buf,33,1);
+	}
+
+	for (int i = 0;i<16;i++) {
+		pktbuf_remove_header(buf,33);
+	}
+
+	for (int i = 0;i<16;i++) {
+		pktbuf_add_header(buf,33,0);
+	}
+
+	for (int i = 0;i<16;i++) {
+		pktbuf_remove_header(buf,33);
+	}
+	pktbuf_free(buf);
+
+	buf = pktbuf_alloc(8);
+	pktbuf_resize(buf,32);
+	pktbuf_resize(buf,288);
+	pktbuf_resize(buf,4922);
+
+
+
+}
+
 void basic_test(void) {
 	// nlist_test();
-	mblock_test();
+	// mblock_test();
+	pktbuf_test();
 }
 
 
