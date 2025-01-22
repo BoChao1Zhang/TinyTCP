@@ -135,8 +135,66 @@ void pktbuf_test(void) {
 	pktbuf_resize(buf,0);
 	pktbuf_free(buf);
 
+	buf = pktbuf_alloc(689);
+	pktbuf_t *buf2 = pktbuf_alloc(1000);
+	pktbuf_t *buf3 = pktbuf_alloc(30);
+	pktbuf_join(buf,buf2);
+	pktbuf_join(buf,buf3);
+	pktbuf_free(buf);
+
+	//32-4-16-54-38
+	buf = pktbuf_alloc(32);
+	pktbuf_join(buf,pktbuf_alloc(4));
+	pktbuf_join(buf,pktbuf_alloc(16));
+	pktbuf_join(buf,pktbuf_alloc(54));
+	pktbuf_join(buf,pktbuf_alloc(38));
+
+	pktbuf_set_cont(buf,44);
+	pktbuf_set_cont(buf,60);
+	pktbuf_set_cont(buf,44);
+	pktbuf_set_cont(buf,128);
+	pktbuf_set_cont(buf,135);
+	pktbuf_free(buf);
+
+	buf = pktbuf_alloc(32);
+	pktbuf_join(buf,pktbuf_alloc(4));
+	pktbuf_join(buf,pktbuf_alloc(16));
+	pktbuf_join(buf,pktbuf_alloc(54));
+	pktbuf_join(buf,pktbuf_alloc(38));
+	pktbuf_join(buf,pktbuf_alloc(512));
+
+
+	pktbuf_rest_acc(buf);
+	static uint16_t temp[1000];
+	for (int i = 0;i<1000;i++) {
+		temp[i] = i;
+	}
+	pktbuf_write(buf,(uint8_t *)temp,pktbuf_size(buf));
+
+	static uint16_t read_temp[1000];
+	pktbuf_rest_acc(buf);
+	plat_memset(read_temp,0,sizeof(read_temp));
+	if (pktbuf_read(buf,(uint8_t *)read_temp,pktbuf_size(buf))!=0) {
+		plat_printf("read error\n");
+	}
+
+	plat_memset(read_temp,0,sizeof(read_temp));
+	pktbuf_seek(buf,18 *2);
+	pktbuf_read(buf,(uint8_t *)read_temp,56);
+	if (plat_memcpy(temp+18,read_temp,56)!=0) {
+		plat_printf("read error\n");
+	}
+
+	plat_memset(read_temp,0,sizeof(read_temp));
+	pktbuf_seek(buf,85 * 2);
+	pktbuf_read(buf,(uint8_t *)read_temp,256);
+	if (plat_memcpy(temp+85,read_temp,256)!=0) {
+		plat_printf("read error\n");
+	}
 
 }
+
+
 
 void basic_test(void) {
 	// nlist_test();

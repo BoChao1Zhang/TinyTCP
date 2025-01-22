@@ -22,23 +22,43 @@ typedef struct _pktbuf_t {
     int total_size;
     nlist_t blk_list;
     nlist_node_t node;
+
+    int pos;
+    pktblk_t *curr_blk;
+    uint8_t *blk_offset;
 } pktbuf_t;
 
 //pkt buffer
 net_err_t pktbuf_init();
+
 pktbuf_t *pktbuf_alloc(int size);
 void pktbuf_free(pktbuf_t *pktbuf);
-net_err_t pktbuf_add_header(pktbuf_t* buf,int size,int cont);
-net_err_t pktbuf_remove_header(pktbuf_t*buf,int size);
-net_err_t pktbuf_resize(pktbuf_t* buf,int to_size);
+net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
+net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
+net_err_t pktbuf_join(pktbuf_t *dest, pktbuf_t *src);
+net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
+net_err_t pktbuf_rest_acc(pktbuf_t* buf);
+net_err_t pktbuf_write(pktbuf_t *buf, const uint8_t *data, int size);
+net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *data, int size);
+net_err_t pktbuf_seek(pktbuf_t *buf, int offset);
+net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src,int size);
+
+inline int pktbuf_size(pktbuf_t *buf) {
+    return buf->total_size;
+}
 
 //pkt block
 pktblk_t *pktbuf_blk_next(pktblk_t *pktblk);
+
 pktblk_t *pktbuf_first_blk(pktbuf_t *buf);
+
 pktblk_t *pktbuf_last_blk(pktbuf_t *buf);
+
 inline int cur_blk_tail_free(pktblk_t *blk) {
     return (blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size);
 }
-void pktblk_free_list(pktblk_t* first_blk);
+
+void pktblk_free_list(pktblk_t *first_blk);
 
 #endif //PKTBUF_H
