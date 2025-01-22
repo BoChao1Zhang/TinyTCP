@@ -24,6 +24,7 @@ typedef struct _pktbuf_t {
     nlist_node_t node;
 
     int pos;
+    int ref;
     pktblk_t *curr_blk;
     uint8_t *blk_offset;
 } pktbuf_t;
@@ -44,6 +45,8 @@ net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *data, int size);
 net_err_t pktbuf_seek(pktbuf_t *buf, int offset);
 net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src,int size);
 net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size);
+void pktbuf_inc_ref(pktblk_t* buf);
+
 
 inline int pktbuf_size(pktbuf_t *buf) {
     return buf->total_size;
@@ -61,5 +64,11 @@ inline int cur_blk_tail_free(pktblk_t *blk) {
 }
 
 void pktblk_free_list(pktblk_t *first_blk);
+
+
+static inline uint8_t* pktbuf_data(pktbuf_t* buf) {
+    pktblk_t* first = pktbuf_first_blk(buf);
+    return first ? first->data : (uint8_t *)0;
+}
 
 #endif //PKTBUF_H
