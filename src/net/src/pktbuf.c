@@ -192,7 +192,7 @@ static void pktbuf_insert_blk_list(pktbuf_t *buf, pktblk_t *first_blk, int add_l
 
 void pktbuf_inc_ref(pktbuf_t *buf) {
     nlocker_lock(&locker);
-    buf->ref ++;
+    buf->ref++;
     nlocker_unlock(&locker);
 }
 

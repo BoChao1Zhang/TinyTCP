@@ -45,7 +45,7 @@ net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *data, int size);
 net_err_t pktbuf_seek(pktbuf_t *buf, int offset);
 net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src,int size);
 net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size);
-void pktbuf_inc_ref(pktblk_t* buf);
+void pktbuf_inc_ref(pktbuf_t* buf);
 
 
 inline int pktbuf_size(pktbuf_t *buf) {

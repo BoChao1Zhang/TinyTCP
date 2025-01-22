@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by 32101 on 25-1-16.
 //
 
@@ -12,7 +12,7 @@
 #define DBG_BUF     DBG_LEVEL_INFO
 #define DBG_INIT    DBG_LEVEL_INFO
 #define DBG_PLAT    DBG_LEVEL_INFO
-
+#define DBG_NETIF   DBG_LEVEL_INFO
 
 #define EXMSG_MSG_CNT 10
 #define EXMSG_LOCKER NLOKCER_THREAD
@@ -23,4 +23,10 @@
 
 #define DBG_DISP_ENABLED(module) (module >= DBG_LEVEL_INFO)
 
+//链路层相关
+#define NETIF_HWADDR_SIZE   10
+#define NETIF_NAME_SIZE     10
+#define NET_INQ_SIZE        50
+#define NET_OUTQ_SIZE       50
+#define NETIF_DEV_CNT       10
 #endif //NET_CFG_H

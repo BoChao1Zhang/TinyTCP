@@ -7,6 +7,7 @@
 #include "nlist.h"
 #include "mblock.h"
 #include "pktbuf.h"
+#include "netif.h"
 
 net_err_t netdev_init() {
 	netif_pcap_open();
