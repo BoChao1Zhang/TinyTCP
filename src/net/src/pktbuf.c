@@ -45,7 +45,7 @@ static void display_check_buf(pktbuf_t *buf) {
 
         plat_printf("%d: ", index++);
 
-        int pre_size = cur->data - cur->payload;
+        int pre_size = (int)(cur->data - cur->payload);
         plat_printf("pre: %d B, ", pre_size);
 
         int used_size = cur->size;
@@ -185,7 +185,7 @@ static void pktbuf_insert_blk_list(pktbuf_t *buf, pktblk_t *first_blk, int add_l
 
 pktbuf_t *pktbuf_alloc(int size) {
     pktbuf_t *pktbuf = (pktbuf_t *) mblock_alloc(&pktbuf_mblock, -1);
-    pktbuf_rest_acc(pktbuf);
+
     if (!pktbuf) {
         dbg_error(DBG_BUF, "no free buf\n");
         return (pktbuf_t *) 0;
@@ -204,7 +204,7 @@ pktbuf_t *pktbuf_alloc(int size) {
 
         pktbuf_insert_blk_list(pktbuf, block, 1);
     }
-
+    pktbuf_rest_acc(pktbuf);
     display_check_buf(pktbuf);
 
     return pktbuf;
@@ -459,6 +459,7 @@ net_err_t pktbuf_write(pktbuf_t *buf, const uint8_t *data, int size) {
 
         move_forward(buf,curr_copy);
     }
+    return NET_ERR_OK;
 }
 
 net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *data, int size) {
@@ -513,9 +514,29 @@ net_err_t pktbuf_seek(pktbuf_t *buf, int offset) {
 }
 
 net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src, int size) {
+    int dest_remain_size = total_blk_remain(dest);
+    int src_remain_size = total_blk_remain(src);
+    if (dest_remain_size < size || src_remain_size < size) {
+        dbg_error(DBG_BUF, "no space to copy %d < %d\n", dest_remain_size, size);
+        return NET_ERR_SIZE;
+    }
 
+    while (size) {
+        int src_curr_remain_size = curr_blk_remain(src);
+        int dest_curr_remain_size = curr_blk_remain(dest);
+        int curr_copy = src_curr_remain_size > dest_curr_remain_size ? dest_curr_remain_size : src_curr_remain_size;
+        curr_copy = size > curr_copy? curr_copy : size;
+        plat_memcpy(dest->blk_offset, src->blk_offset, curr_copy);
+        move_forward(dest,curr_copy);
+        move_forward(src,curr_copy);
+        size -= curr_copy;
+    }
+    return NET_ERR_OK;
 }
 
+net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size) {
+
+}
 
 
 void pktbuf_free(pktbuf_t *pktbuf) {

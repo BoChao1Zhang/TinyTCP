@@ -192,6 +192,20 @@ void pktbuf_test(void) {
 		plat_printf("read error\n");
 	}
 
+	pktbuf_t *dest = pktbuf_alloc(1024);
+	pktbuf_seek(dest,600);
+	pktbuf_seek(buf, 200);
+	pktbuf_copy(dest,buf,122);
+
+	plat_memset(read_temp,0,sizeof(read_temp));
+	pktbuf_seek(dest, 600);
+	pktbuf_read(dest,(uint8_t *)read_temp,122);
+	if (plat_memcmp(temp+100,read_temp,122)!=0) {
+		plat_printf("copy error\n");
+	}
+
+	pktbuf_free(dest);
+	pktbuf_free(buf);
 }
 
 
