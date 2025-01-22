@@ -204,6 +204,17 @@ void pktbuf_test(void) {
 		plat_printf("copy error\n");
 	}
 
+	pktbuf_seek(dest,0);
+	pktbuf_fill(dest,53,pktbuf_size(dest));
+	pktbuf_seek(dest,0);
+	pktbuf_read(dest,(uint8_t *)read_temp,pktbuf_size(dest));
+	for (int i = 0; i<pktbuf_size(dest);i++) {
+		if (read_temp[i]!=0x3535) {
+			plat_printf("fill error\n");
+			break;
+		}
+	}
+
 	pktbuf_free(dest);
 	pktbuf_free(buf);
 }

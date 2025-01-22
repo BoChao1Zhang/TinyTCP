@@ -535,7 +535,26 @@ net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src, int size) {
 }
 
 net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size) {
+    if (!size) {
+        return NET_ERR_PARAM;
+    }
+    int remain_size = total_blk_remain(buf);
+    if (remain_size < size) {
+        dbg_error(DBG_BUF, "no space %d < %d\n", remain_size, size);
+        return NET_ERR_SIZE;
+    }
 
+    while (size) {
+        int curr_remain_size = curr_blk_remain(buf);
+        int curr_fill = size > curr_remain_size ? curr_remain_size : size;
+
+        plat_memset(buf->blk_offset, v, curr_fill);
+
+        size -= curr_fill;
+
+        move_forward(buf,curr_fill);
+    }
+    return NET_ERR_OK;
 }
 
 
