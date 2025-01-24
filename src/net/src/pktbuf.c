@@ -95,7 +95,7 @@ static pktblk_t *pktblk_alloc(void) {
     return pktblk;
 }
 
-static pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
+pktblk_t * pktbuf_first_blk(pktbuf_t *buf) {
     nlist_node_t *first = nlist_first(&buf->blk_list);
     return nlist_entry(first, pktblk_t, node);
 }
@@ -591,10 +591,12 @@ net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size) {
 
 
 void pktbuf_free(pktbuf_t *pktbuf) {
-    nlocker_lock(&locker);
-    if (--pktbuf->ref == 0) {
+
+    if (pktbuf->ref - 1 == 0) {
+        nlocker_lock(&locker);
+        pktbuf->ref --;
+        nlocker_unlock(&locker);
         pktblk_free_list(pktbuf_first_blk(pktbuf));
         mblock_free(&pktbuf_mblock, pktbuf);
     }
-    nlocker_unlock(&locker);
 }

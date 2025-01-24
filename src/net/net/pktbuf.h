@@ -48,7 +48,7 @@ net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size);
 void pktbuf_inc_ref(pktbuf_t* buf);
 
 
-inline int pktbuf_size(pktbuf_t *buf) {
+static inline int pktbuf_size(pktbuf_t *buf) {
     return buf->total_size;
 }
 
@@ -59,7 +59,7 @@ pktblk_t *pktbuf_first_blk(pktbuf_t *buf);
 
 pktblk_t *pktbuf_last_blk(pktbuf_t *buf);
 
-inline int cur_blk_tail_free(pktblk_t *blk) {
+static inline int cur_blk_tail_free(pktblk_t *blk) {
     return (blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size);
 }
 

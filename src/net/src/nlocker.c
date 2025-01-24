@@ -9,6 +9,7 @@ net_err_t nlocker_init(nlocker_t *locker, nlocker_type_t type) {
         if (mutex == SYS_MUTEX_INVALID) {
             return NET_ERR_SYS;
         }
+        locker->mutex = mutex;
     }
 
     locker->type = type;
