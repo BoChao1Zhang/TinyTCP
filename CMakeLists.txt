@@ -1,5 +1,5 @@
 # cmake最低版本要求
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.10)
 
 # 设置工程的名字，生成的可执行文件也将使用该名称，如net.exe
 project(net)
@@ -9,6 +9,9 @@ LINK_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/npcap/Lib/x64          # win64使用
     #${PROJECT_SOURCE_DIR}/lib/npcap/Lib/             # win32使用
 )
+
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 给visual studio编译器使用的宏，Enable GCC debug
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)

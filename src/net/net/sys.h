@@ -1,14 +1,13 @@
-﻿//
-// Created by 32101 on 25-1-18.
-//
+﻿
+/**
+ * 操作系统接口相关定义及消息队列的实现
+ */
+#ifndef NET_SYS_H
+#define NET_SYS_H
 
-#ifndef SYS_H
-#define SYS_H
+#include "net_plat.h"
 
-#include "sys_plat.h"
-
-
-
+// 计数信号量相关：由具体平台实现
 sys_sem_t sys_sem_create(int init_count);
 void sys_sem_free(sys_sem_t sem);
 int sys_sem_wait(sys_sem_t sem, uint32_t ms);
@@ -21,14 +20,4 @@ void sys_mutex_lock(sys_mutex_t mutex);
 void sys_mutex_unlock(sys_mutex_t mutex);
 int sys_mutex_is_valid(sys_mutex_t mutex);
 
-// 线程相关：由具体平台实现
-typedef void (*sys_thread_func_t)(void * arg);
-sys_thread_t sys_thread_create(sys_thread_func_t entry, void* arg);
-void sys_thread_exit (int error);
-void sys_sleep(int ms);
-sys_thread_t sys_thread_self (void);
-
-void sys_plat_init(void);
-
-
-#endif //SYS_H
+#endif // NET_SYS_H
