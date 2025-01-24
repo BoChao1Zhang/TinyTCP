@@ -26,7 +26,7 @@
 //链路层相关
 #define NETIF_HWADDR_SIZE   10
 #define NETIF_NAME_SIZE     10
-#define NET_INQ_SIZE        50
-#define NET_OUTQ_SIZE       50
+#define NETIF_INQ_SIZE        50
+#define NETIF_OUTQ_SIZE       50
 #define NETIF_DEV_CNT       10
 #endif //NET_CFG_H

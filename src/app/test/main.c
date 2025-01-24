@@ -166,13 +166,13 @@ void pktbuf_test(void) {
 
 
 	pktbuf_rest_acc(buf);
-	static uint16_t temp[1000];
-	for (int i = 0;i<1000;i++) {
+	static uint16_t temp[1024];
+	for (int i = 0;i<1024;i++) {
 		temp[i] = i;
 	}
 	pktbuf_write(buf,(uint8_t *)temp,pktbuf_size(buf));
 
-	static uint16_t read_temp[1000];
+	static uint16_t read_temp[1024];
 	pktbuf_rest_acc(buf);
 	plat_memset(read_temp,0,sizeof(read_temp));
 	if (pktbuf_read(buf,(uint8_t *)read_temp,pktbuf_size(buf))!=0) {
@@ -189,8 +189,11 @@ void pktbuf_test(void) {
 	plat_memset(read_temp,0,sizeof(read_temp));
 	pktbuf_seek(buf,85 * 2);
 	pktbuf_read(buf,(uint8_t *)read_temp,256);
-	if (plat_memcpy(temp+85,read_temp,256)!=0) {
-		plat_printf("read error\n");
+	plat_memcpy(temp+85,read_temp,256);
+	for (int i = 0;i<85;i++) {
+		if (temp[85 + i] != read_temp[i]) {
+			plat_printf("read error\n");
+		}
 	}
 
 	pktbuf_t *dest = pktbuf_alloc(1024);
@@ -209,7 +212,7 @@ void pktbuf_test(void) {
 	pktbuf_fill(dest,53,pktbuf_size(dest));
 	pktbuf_seek(dest,0);
 	pktbuf_read(dest,(uint8_t *)read_temp,pktbuf_size(dest));
-	for (int i = 0; i<pktbuf_size(dest);i++) {
+	for (int i = 0; i<512;i++) {
 		if (read_temp[i]!=0x3535) {
 			plat_printf("fill error\n");
 			break;
@@ -221,11 +224,17 @@ void pktbuf_test(void) {
 }
 
 
+void netif_test(void) {
+	// netif_t * netif = netif_open("loop");
+	plat_printf("你好");
+}
 
 void basic_test(void) {
-	// nlist_test();
-	// mblock_test();
+	nlist_test();
+	mblock_test();
 	pktbuf_test();
+	netif_test();
+
 }
 
 

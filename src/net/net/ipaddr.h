@@ -6,6 +6,8 @@
 #define IPADDR_H
 #include <stdint.h>
 
+#include "net_err.h"
+
 #define IPV4_ADDR_SIZE      4
 
 typedef struct _ipaddr_t {
@@ -18,5 +20,10 @@ typedef struct _ipaddr_t {
     };
 
 }ipaddr_t;
+
+void ipaddr_set_any(ipaddr_t* ip);
+ipaddr_t * ipaddr_get_any(void);
+net_err_t ipaddr_from_str(ipaddr_t* dest,const char *str);
+void ipaddr_copy(ipaddr_t* dest,const ipaddr_t* src);
 
 #endif //IPADDR_H

@@ -1,5 +1,5 @@
 # cmake最低版本要求
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.15)
 
 # 设置工程的名字，生成的可执行文件也将使用该名称，如net.exe
 project(net)
