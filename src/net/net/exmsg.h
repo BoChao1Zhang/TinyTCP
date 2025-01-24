@@ -1,5 +1,6 @@
 #pragma once
 
+#include "netif.h"
 #include "net_err.h"
 #include "nlist.h"
 
@@ -13,4 +14,4 @@ typedef struct _exmsg_t {
 
 net_err_t exmsg_init(void);
 net_err_t exmsg_start(void);
-net_err_t exmsg_netif_in(void);
+net_err_t exmsg_netif_in(netif_t *netif);

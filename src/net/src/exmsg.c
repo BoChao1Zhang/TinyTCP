@@ -48,7 +48,7 @@ net_err_t exmsg_start(void) {
     return NET_ERR_OK;
 }
 
-net_err_t exmsg_netif_in(void) {
+net_err_t exmsg_netif_in(netif_t* netif) {
     exmsg_t *msg = (exmsg_t *) mblock_alloc(&msg_mblock, -1);
     if (!msg) {
         dbg_warning(DBG_MSG, "no free exmsg \n");

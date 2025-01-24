@@ -5,6 +5,7 @@
 #include "netif.h"
 #include "mblock.h"
 #include "dbg.h"
+#include "exmsg.h"
 #include "pktbuf.h"
 static netif_t netif_buffer[NETIF_DEV_CNT];
 static mblock_t netif_mblock;
@@ -179,7 +180,7 @@ net_err_t netif_close(netif_t *netif) {
         return NET_ERR_STATE;
     }
     netif->ops->close(netif);
-    netif->state == NETIF_CLOSED;
+    netif->state = NETIF_CLOSED;
     nlist_remove(&netif_list,&netif->node);
     mblock_free(&netif_mblock,netif);
     display_netif_list();
@@ -189,4 +190,55 @@ net_err_t netif_close(netif_t *netif) {
 
 void netif_set_default(netif_t *netif) {
     netif_default = netif;
+}
+
+net_err_t netif_put_in(netif_t *netif, pktbuf_t *buf, int tmo) {
+    net_err_t err = fixq_send(&netif->in_q,buf,tmo);
+    if (err < 0) {
+        dbg_warning("DBG_NETIF","netif: %s,in q full\n",netif->name);
+        return NET_ERR_FULL;
+    }
+    exmsg_netif_in(netif);
+    return NET_ERR_OK;
+}
+
+pktbuf_t * netif_get_in(netif_t *netif, int tmo) {
+    pktbuf_t * buf = fixq_recv(&netif->in_q,tmo);
+    if (buf) {
+        pktbuf_rest_acc(buf);
+        return buf;
+    }
+
+    dbg_info(DBG_NETIF,"netif: %s,in q empty\n",netif->name);
+    return (pktbuf_t *)0;
+}
+
+net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo) {
+    net_err_t err = fixq_send(&netif->out_q,buf,tmo);
+    if (err < 0) {
+        dbg_warning("DBG_NETIF","netif: %s,out q full\n",netif->name);
+        return NET_ERR_FULL;
+    }
+    return NET_ERR_OK;
+}
+
+pktbuf_t * netif_get_out(netif_t *netif, int tmo) {
+    pktbuf_t * buf = fixq_recv(&netif->out_q,tmo);
+    if (buf) {
+        pktbuf_rest_acc(buf);
+        return buf;
+    }
+
+    dbg_info(DBG_NETIF,"netif: %s,out q empty\n",netif->name);
+    return (pktbuf_t *)0;
+}
+
+net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
+    net_err_t err = netif_put_out(netif,buf,-1);
+    if (err < 0) {
+        dbg_info(DBG_NETIF, "send failed, queue full\n");
+        return err;
+    }
+
+    return netif->ops->xmit(netif);
 }

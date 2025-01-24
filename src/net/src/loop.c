@@ -4,6 +4,7 @@
 
 #include "loop.h"
 #include "dbg.h"
+#include "exmsg.h"
 
 net_err_t loop_open(struct _netif_t *netif,void *data) {
     netif->type = NETIF_TYPE_LOOP;
@@ -15,6 +16,15 @@ void loop_close(struct  _netif_t*netif) {
 }
 
 net_err_t loop_xmit(struct _netif_t *netif) {
+    pktbuf_t * pktbuf = netif_get_out(netif,-1);
+    if (pktbuf) {
+        net_err_t err = netif_put_in(netif,pktbuf,-1);
+        if (err < 0) {
+            pktbuf_free(pktbuf);
+            return err;
+        }
+
+    }
     return NET_ERR_OK;
 }
 

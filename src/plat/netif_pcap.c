@@ -14,7 +14,7 @@ void recv_thread(void * arg) {
     while (1) {
         sys_sleep(10);
 
-        exmsg_netif_in();
+        exmsg_netif_in((netif_t *)0);
     }
 }
 
