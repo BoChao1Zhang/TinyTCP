@@ -94,14 +94,15 @@ netif_t* netif_open(const char *dev_name,netif_ops_t *ops,void *ops_data) {
         return (netif_t *)0;
     }
 
+    netif->ops = ops;
+    netif->ops_data = ops_data;
     err = ops->open(netif,ops_data);
     if (err < 0) {
         dbg_error(DBG_NETIF,"netif ops open error\n");
         goto free_return;
     }
     netif->state = NETIF_OPENED;
-    netif->ops = ops;
-    netif->ops_data = ops_data;
+
 
     if (netif->type == NETIF_TYPE_NONE) {
         dbg_error(DBG_NETIF, "netif type unknown\n");

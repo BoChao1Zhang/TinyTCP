@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by 32101 on 25-1-16.
 //
 
@@ -12,6 +12,33 @@
 void recv_thread(void * arg) {
     plat_printf("recv thread is running...\n");
 
+    netif_t *netif = (netif_t *)arg;
+    pcap_t *pcap = (pcap_t *)netif->ops_data;
+    while (1) {
+        struct pcap_pkthdr *pkthdr;
+        const uint8_t * pkt_data;
+        //数据包的元数据包含在pkthdr中，数据包的内容在pkt_data中
+        if (pcap_next_ex(pcap,&pkthdr,&pkt_data) !=1) {
+            continue;
+        }
+
+        pktbuf_t *buf = pktbuf_alloc(pkthdr->len);
+        if (buf == (pktbuf_t *)0) {
+            dbg_warning(DBG_NETIF,"buf == NULL");
+            continue;
+        }
+        pktbuf_write(buf,pkt_data,pkthdr->len);
+
+        int err = netif_put_in(netif,buf,0);
+
+        if (err < 0) {
+            dbg_warning(DBG_NETIF,"write buf failed\n");
+            pktbuf_free(buf);
+            continue;
+        }
+
+        sys_sleep(1);
+    }
     while (1) {
         sys_sleep(10);
 
