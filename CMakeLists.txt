@@ -10,6 +10,8 @@ LINK_DIRECTORIES(
     #${PROJECT_SOURCE_DIR}/lib/npcap/Lib/             # win32使用
 )
 
+
+
 # 给visual studio编译器使用的宏，Enable GCC debug
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
@@ -36,6 +38,7 @@ message(STATUS "current platform: ${CMAKE_HOST_SYSTEM_NAME}")
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
     add_definitions(-DSYS_PLAT_WINDOWS)
     target_link_libraries(${PROJECT_NAME} wpcap packet Ws2_32)
+    add_compile_options(/utf-8)
 else()
     # Linux和Mac上的特定配置
     add_definitions(-DSYS_PLAT_LINUX)

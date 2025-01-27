@@ -9,9 +9,35 @@
 #include "pktbuf.h"
 #include "netif.h"
 
-net_err_t netdev_init() {
-	netif_pcap_open();
+pcap_data_t netdev0_data = {
+	.ip = netdev0_phy_ip,
+	.hwaddr = netdev0_hwaddr
+};
 
+net_err_t netdev_init() {
+	// dbg_info(DBG_NETIF, "init netif\n");
+
+	netif_t * netif = netif_open("netif 0",&netdev_ops,&netdev0_data);
+	if (!netif) {
+		dbg_error(DBG_NETIF,"open netif failed\n");
+		return NET_ERR_NONE;
+	}
+	ipaddr_t ip,mask,gw;
+	ipaddr_from_str(&ip,netdev0_ip);
+	ipaddr_from_str(&mask,netdev0_mask);
+	ipaddr_from_str(&gw,netdev0_gw);
+	net_err_t err = netif_set_addr(netif,&ip,&mask,&gw);
+
+	if (err < 0) {
+		dbg_error(DBG_NETIF,"set netif failed\n");
+	}
+
+	netif_set_active(netif);
+
+	pktbuf_t *buf = pktbuf_alloc(100);
+	netif_out(netif,(ipaddr_t *)0,buf);
+
+	dbg_info(DBG_NETIF,"init netif done\n");
 	return NET_ERR_OK;
 }
 
@@ -244,12 +270,13 @@ void basic_test(void) {
 int main (void) {
 
 	net_init();
+	netdev_init();
 
 	// basic_test();
 	net_start();
 
 
-	netdev_init();
+
 	// 以下是测试代码，可以删掉
 	// 打开物理网卡，设置好硬件地址
 	while(1){

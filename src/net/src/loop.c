@@ -28,7 +28,7 @@ net_err_t loop_xmit(struct _netif_t *netif) {
     return NET_ERR_OK;
 }
 
-static const netif_ops_t loop_ops = {
+static const netif_ops_t netdev_ops = {
     .open =loop_open,
     .close =loop_close,
     .xmit = loop_xmit,
@@ -37,7 +37,7 @@ static const netif_ops_t loop_ops = {
 net_err_t loop_init(void) {
     dbg_info(DBG_NETIF, "init loop netif\n");
 
-    netif_t * netif = netif_open("loop",&loop_ops,(void *)0);
+    netif_t * netif = netif_open("loop",&netdev_ops,(void *)0);
     if (!netif) {
         dbg_error(DBG_NETIF,"open loop failed\n");
         return NET_ERR_NONE;

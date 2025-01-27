@@ -64,7 +64,7 @@ typedef struct _netif_t {
 net_err_t netif_init(void);
 netif_t * netif_open(const char * dev_name,netif_ops_t *ops,void *ops_data);
 net_err_t netif_set_addr(netif_t * netif,ipaddr_t * ip,ipaddr_t *mask,ipaddr_t *gateway);
-net_err_t netif_set_hwaddr(netif_t *netif,const char * hwaddr,int len);
+net_err_t netif_set_hwaddr(netif_t *netif,const uint8_t * hwaddr,int len);
 net_err_t netif_set_active(netif_t *netif);
 net_err_t netif_set_inactive(netif_t *netif);
 net_err_t netif_close(netif_t* netif);

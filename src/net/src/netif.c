@@ -130,12 +130,8 @@ net_err_t netif_set_addr(netif_t *netif, ipaddr_t *ip, ipaddr_t *mask, ipaddr_t 
     return  NET_ERR_OK;
 }
 
-net_err_t netif_set_hwaddr(netif_t *netif, const char *hwaddr, int len) {
-    int err = plat_memcmp(&netif->hwaddr.addr,hwaddr,len);
-    if (err < 0 || len > NETIF_HWADDR_SIZE) {
-        dbg_error(DBG_NETIF,"copy hwaddr failed\n");
-        return NET_ERR_MEM;
-    }
+net_err_t netif_set_hwaddr(netif_t *netif, const uint8_t *hwaddr, int len) {
+    plat_memcpy(&netif->hwaddr.addr,hwaddr,len);
     netif->hwaddr.len = len;
     return NET_ERR_OK;
 
@@ -195,7 +191,7 @@ void netif_set_default(netif_t *netif) {
 net_err_t netif_put_in(netif_t *netif, pktbuf_t *buf, int tmo) {
     net_err_t err = fixq_send(&netif->in_q,buf,tmo);
     if (err < 0) {
-        dbg_warning("DBG_NETIF","netif: %s,in q full\n",netif->name);
+        dbg_warning(DBG_NETIF,"DBG_NETIF","netif: %s,in q full\n",netif->name);
         return NET_ERR_FULL;
     }
     exmsg_netif_in(netif);
@@ -216,7 +212,7 @@ pktbuf_t * netif_get_in(netif_t *netif, int tmo) {
 net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo) {
     net_err_t err = fixq_send(&netif->out_q,buf,tmo);
     if (err < 0) {
-        dbg_warning("DBG_NETIF","netif: %s,out q full\n",netif->name);
+        dbg_warning(DBG_NETIF,"DBG_NETIF","netif: %s,out q full\n",netif->name);
         return NET_ERR_FULL;
     }
     return NET_ERR_OK;

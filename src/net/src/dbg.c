@@ -45,6 +45,7 @@ void dbg_dump_hwaddr(const char *msg, const uint8_t *hwaddr, int len) {
     } else {
         plat_printf("none");
     }
+    plat_printf("\n");
 }
 
 
@@ -55,7 +56,7 @@ void dbg_dump_ip(const char *msg, ipaddr_t *ipaddr) {
     }
 
     if (ipaddr) {
-        plat_printf("%d.%d.%d.%d",ipaddr->a_addr[0],ipaddr->a_addr[1],ipaddr->a_addr[2],ipaddr->a_addr[3]);
+        plat_printf("%d.%d.%d.%d ",ipaddr->a_addr[0],ipaddr->a_addr[1],ipaddr->a_addr[2],ipaddr->a_addr[3]);
     } else {
         plat_printf("0.0.0.0");
     }
