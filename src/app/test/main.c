@@ -8,6 +8,7 @@
 #include "mblock.h"
 #include "pktbuf.h"
 #include "netif.h"
+#include "../../net/net/tools.h"
 
 pcap_data_t netdev0_data = {
 	.ip = netdev0_phy_ip,
@@ -254,11 +255,13 @@ void netif_test(void) {
 }
 
 void basic_test(void) {
-	nlist_test();
-	mblock_test();
-	pktbuf_test();
-	netif_test();
+	// nlist_test();
+	// mblock_test();
+	// pktbuf_test();
+	// netif_test();
 
+	uint32_t v1 = x_ntohl(0x12345678);
+	uint32_t v2 = x_ntohs(0x1234);
 }
 
 
@@ -270,7 +273,7 @@ int main (void) {
 	net_init();
 	netdev_init();
 
-	// basic_test();
+	basic_test();
 	net_start();
 
 
