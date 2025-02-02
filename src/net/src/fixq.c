@@ -32,18 +32,20 @@ net_err_t fixq_init(fixq_t *q, void **buf, int size, nlocker_type_t type) {
     q->buf = buf;
     return NET_ERR_OK;
 init_failed:
-    if (q->send_sem != SYS_SEM_INVALID)
-        sys_sem_free(q->send_sem);
-    if (q->recv_sem != SYS_SEM_INVALID)
+    if (q->recv_sem != SYS_SEM_INVALID) {
         sys_sem_free(q->recv_sem);
-    sys_sem_free(q->recv_sem);
+    }
+    if (q->send_sem != SYS_SEM_INVALID) {
+        sys_sem_free(q->send_sem);
+    }
+
     nlocker_destroy(&q->locker);
     return err;
 }
 
 net_err_t fixq_send(fixq_t *q, void *msg, int tmo) {
     nlocker_lock(&q->locker);
-    if (tmo < 0 && q->cnt >= q->size) {
+    if ((q->cnt >= q->size) && (tmo < 0)) {
         nlocker_unlock(&q->locker);
         return NET_ERR_FULL;
     }
@@ -67,7 +69,7 @@ net_err_t fixq_send(fixq_t *q, void *msg, int tmo) {
 
 void * fixq_recv(fixq_t *q, int tmo) {
     nlocker_lock(&q->locker);
-    if (tmo < 0 && q->cnt == 0) {
+    if (tmo < 0 && !q->cnt) {
         nlocker_unlock(&q->locker);
         return (void *) 0;
     }
@@ -84,8 +86,6 @@ void * fixq_recv(fixq_t *q, int tmo) {
     }
     q->cnt--;
     nlocker_unlock(&q->locker);
-    sys_sem_notify(q->send_sem);
-
     sys_sem_notify(q->send_sem);
     return msg;
 }

@@ -34,23 +34,32 @@ void recv_thread(void * arg) {
         if (err < 0) {
             dbg_warning(DBG_NETIF,"write buf failed\n");
             pktbuf_free(buf);
-            continue;
         }
-
-        sys_sleep(1);
-    }
-    while (1) {
-        sys_sleep(10);
-
-        exmsg_netif_in((netif_t *)0);
     }
 }
 
 void xmit_thread(void * arg) {
     plat_printf("xmit thread is running...\n");
+    // 1500 + 6(目的) + 6(源) + 2(类型) = 1514
+    static uint8_t rw_buffer[1514];
+    netif_t * netif = (netif_t*)arg;
+    pcap_t * pcap = (pcap_t *)netif->ops_data;
 
     while (1) {
-        sys_sleep(10);
+        pktbuf_t *buf = netif_get_out(netif,0);
+        if (buf == (pktbuf_t *)0) {
+            continue;
+        }
+
+        int total_size = buf->total_size;
+        plat_memset(rw_buffer,0,sizeof(rw_buffer));
+        pktbuf_read(buf,rw_buffer,total_size);
+        pktbuf_free(buf);
+        int err = pcap_inject(pcap,rw_buffer,total_size);
+        if (err < 0) {
+            fprintf(stderr, "pcap send: send packet failed!:%s\n", pcap_geterr(pcap));
+            fprintf(stderr, "pcap send: pcaket size %d\n", total_size);
+        }
     }
 }
 
@@ -62,13 +71,12 @@ net_err_t netif_netdev_open(struct _netif_t *netif,void *data) {
         dbg_error(DBG_NETIF,"open pcap failed\n name=%s\n",netif->name);
         return NET_ERR_IO;
     }
-
-    netif->mtu = 1500;
     //收发数据包都需要pcap 这个结构体
     netif->ops_data = pcap;
-    netif_set_hwaddr(netif,dev_data->hwaddr,6);
-    netif->type = NETIF_TYPE_ETHER;
 
+    netif->mtu = 1500;
+    netif->type = NETIF_TYPE_ETHER;
+    netif_set_hwaddr(netif,dev_data->hwaddr,6);
 
     sys_thread_create(recv_thread,netif);
     sys_thread_create(xmit_thread,netif);
@@ -82,15 +90,6 @@ void netif_netdev_close(struct  _netif_t* netif) {
 }
 
 net_err_t netif_netdev_xmit(struct _netif_t *netif) {
-    pktbuf_t * pktbuf = netif_get_out(netif,-1);
-    if (pktbuf) {
-        net_err_t err = netif_put_in(netif,pktbuf,-1);
-        if (err < 0) {
-            pktbuf_free(pktbuf);
-            return err;
-        }
-
-    }
     return NET_ERR_OK;
 }
 

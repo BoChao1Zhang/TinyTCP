@@ -34,8 +34,6 @@ net_err_t netdev_init() {
 
 	netif_set_active(netif);
 
-	pktbuf_t *buf = pktbuf_alloc(100);
-	netif_out(netif,(ipaddr_t *)0,buf);
 
 	dbg_info(DBG_NETIF,"init netif done\n");
 	return NET_ERR_OK;
@@ -280,7 +278,7 @@ int main (void) {
 	// 以下是测试代码，可以删掉
 	// 打开物理网卡，设置好硬件地址
 	while(1){
-		sys_sleep(10);
+		sys_sleep(1);
 	}
 	return 0;
 }

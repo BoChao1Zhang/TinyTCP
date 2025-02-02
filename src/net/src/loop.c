@@ -50,10 +50,6 @@ net_err_t loop_init(void) {
         dbg_error(DBG_NETIF,"set loop addr failed\n");
     }
     netif_set_active(netif);
-
-    pktbuf_t *buf = pktbuf_alloc(100);
-    netif_out(netif,(ipaddr_t *)0,buf);
-
     dbg_info(DBG_NETIF,"init loop done\n");
     return NET_ERR_OK;
 }
