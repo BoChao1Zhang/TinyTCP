@@ -6,6 +6,7 @@
 #include "netif_pcap.h"
 
 #include "dbg.h"
+#include "ether.h"
 #include "exmsg.h"
 #include "sys_plat.h"
 
@@ -74,7 +75,7 @@ net_err_t netif_netdev_open(struct _netif_t *netif,void *data) {
     //收发数据包都需要pcap 这个结构体
     netif->ops_data = pcap;
 
-    netif->mtu = 1500;
+    netif->mtu = ETHER_MTU;
     netif->type = NETIF_TYPE_ETHER;
     netif_set_hwaddr(netif,dev_data->hwaddr,6);
 
