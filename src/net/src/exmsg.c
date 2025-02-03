@@ -35,13 +35,15 @@ static net_err_t do_netif_in(exmsg_t *msg) {
     while (buf = netif_get_in(netif,-1)) {
         dbg_info(DBG_MSG,"recv a packet %p\n",buf);
 
-        pktbuf_fill(buf,0x11,6);
-
-        //协议数据包释放的规则，err < 0 时，由当前协议层释放,否则数据包完全交给上层处理，由上层释放
-        net_err_t err = netif_out(netif,(ipaddr_t *)0,buf);
-
-        if (err < 0) {
+        if (netif->link_layer) {
+            net_err_t err = netif->link_layer->in(netif,buf);
+            if (err < 0) {
+                pktbuf_free(buf);
+                dbg_warning(DBG_MSG,"netif in fail, error=%d\n",err);
+            }
+        } else {
             pktbuf_free(buf);
+
         }
     }
     return NET_ERR_OK;

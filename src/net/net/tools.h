@@ -7,6 +7,8 @@
 #include "net_cfg.h"
 #include<stdint.h>
 
+#include "net_err.h"
+
 static inline uint16_t swap_u16(uint16_t v) {
     const uint16_t r = ((v & 0xff) << 8) | ((v >> 8) & 0xff);
     return r;
