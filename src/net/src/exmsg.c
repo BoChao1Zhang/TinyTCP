@@ -4,6 +4,8 @@
 #include "sys_plat.h"
 #include "fixq.h"
 #include "mblock.h"
+#include "timer.h"
+#include "sys.h"
 static void *msg_tbl[EXMSG_MSG_CNT];
 static fixq_t msg_queue;
 static exmsg_t msg_buffer[EXMSG_MSG_CNT];
@@ -11,6 +13,7 @@ static mblock_t msg_mblock;
 
 net_err_t exmsg_init(void) {
     dbg_info(DBG_MSG, "exmsg init\n");
+
 
     net_err_t err = fixq_init(&msg_queue, msg_tbl,EXMSG_MSG_CNT, NLOKCER_THREAD);
     if (err != NET_ERR_OK) {
@@ -51,18 +54,23 @@ static net_err_t do_netif_in(exmsg_t *msg) {
 
 static void work_thread(void *arg) {
     dbg_info(DBG_MSG, "exmsg work thread is running...\n");
+    net_time_t time;
+    sys_time_curr(&time);
     while (1) {
-        exmsg_t *msg = (exmsg_t *) fixq_recv(&msg_queue, 0);
-
-        dbg_info(DBG_MSG,"recv a msg %p: %d\n",msg,msg->type);
-        switch (msg->type) {
-            case NET_EXMSG_NETIF_IN:
-                do_netif_in(msg);
+        int first_tmo = net_timer_first_tmo();
+        exmsg_t *msg = (exmsg_t *) fixq_recv(&msg_queue, first_tmo);
+        if (msg) {
+            dbg_info(DBG_MSG,"recv a msg %p: %d\n",msg,msg->type);
+            switch (msg->type) {
+                case NET_EXMSG_NETIF_IN:
+                    do_netif_in(msg);
                 break;
-            default: break;
+                default: break;
+            }
+            mblock_free(&msg_mblock, msg);
         }
-
-        mblock_free(&msg_mblock, msg);
+        int diff_ms = sys_time_goes(&time);
+        net_timer_check_tmo(diff_ms);
     }
 }
 
