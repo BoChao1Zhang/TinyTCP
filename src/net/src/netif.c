@@ -271,6 +271,7 @@ net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
         }
         return netif->ops->xmit(netif);
     }
+    return NET_ERR_OK;
 }
 
 net_err_t netif_register_layer(int type, const link_layer_t *layer) {

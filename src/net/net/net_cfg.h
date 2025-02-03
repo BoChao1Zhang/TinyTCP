@@ -15,6 +15,7 @@
 #define DBG_NETIF   DBG_LEVEL_INFO
 #define DBG_ETHER   DBG_LEVEL_INFO
 #define DBG_TOOLS   DBG_LEVEL_INFO
+#define DBG_TIMER   DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE       1
 
@@ -30,7 +31,10 @@
 //链路层相关
 #define NETIF_HWADDR_SIZE   10
 #define NETIF_NAME_SIZE     10
-#define NETIF_INQ_SIZE        50
-#define NETIF_OUTQ_SIZE       50
+#define NETIF_INQ_SIZE      50
+#define NETIF_OUTQ_SIZE     50
 #define NETIF_DEV_CNT       10
+
+//定时器相关
+#define TIMER_NAME_SIZE     32
 #endif //NET_CFG_H

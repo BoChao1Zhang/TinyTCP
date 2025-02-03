@@ -8,7 +8,8 @@
 #include "mblock.h"
 #include "pktbuf.h"
 #include "netif.h"
-#include "../../net/net/tools.h"
+#include "tools.h"
+#include "timer.h"
 
 pcap_data_t netdev0_data = {
 	.ip = netdev0_phy_ip,
@@ -258,12 +259,43 @@ void netif_test(void) {
 	// netif_t * netif = netif_open("loop");
 	plat_printf("你好");
 }
+void timer0_proc(struct _net_timer_t *timer,void *arg) {
+	static int count = 1;
+	printf("this is %s: %d\n",timer->name,count);
+}
+void timer1_proc(struct _net_timer_t *timer,void *arg) {
+	static int count = 1;
+	printf("this is %s: %d\n",timer->name,count++);
+
+}
+void timer2_proc(struct _net_timer_t *timer,void *arg) {
+	static int count = 1;
+	printf("this is %s: %d\n",timer->name,count++);
+
+}
+void timer3_proc(struct _net_timer_t *timer,void *arg) {
+	static int count = 1;
+	printf("this is %s: %d\n",timer->name,count++);
+
+}
+
+
+
+void timer_test(void) {
+	static net_timer_t t0,t1,t2,t3;
+
+	net_timer_add(&t0,"t0",timer0_proc,(void *)0,200,0);
+	net_timer_add(&t1,"t1",timer1_proc,(void *)0,1000,NET_TIMER_RELOAD);
+	net_timer_add(&t2,"t2",timer1_proc,(void *)0,1000,NET_TIMER_RELOAD);
+	net_timer_add(&t3,"t2",timer3_proc,(void *)0,4000,NET_TIMER_RELOAD);
+}
 
 void basic_test(void) {
 	// nlist_test();
 	// mblock_test();
 	// pktbuf_test();
 	// netif_test();
+	timer_test();
 
 	uint32_t v1 = x_ntohl(0x12345678);
 	uint32_t v2 = x_ntohs(0x1234);
