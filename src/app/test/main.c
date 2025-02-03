@@ -289,7 +289,11 @@ void timer_test(void) {
 	net_timer_add(&t2,"t2",timer2_proc,(void *)0,1000,NET_TIMER_RELOAD);
 	net_timer_add(&t3,"t3",timer3_proc,(void *)0,4000,NET_TIMER_RELOAD);
 
-	net_timer_remove(&t2);
+	net_timer_remove(&t0);
+
+	net_timer_check_tmo(100);
+	net_timer_check_tmo(1200);
+	net_timer_check_tmo(2000);
 }
 
 void basic_test(void) {

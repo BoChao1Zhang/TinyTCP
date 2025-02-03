@@ -100,3 +100,40 @@ net_err_t net_timer_remove(net_timer_t *timer) {
     display_timer_list();
     return NET_ERR_OK;
 }
+
+net_err_t net_timer_check_tmo(int diff_ms) {
+    nlist_t wait_list;
+    nlist_init(&wait_list);
+    nlist_node_t *node = nlist_first(&timer_list);
+    while (node) {
+        nlist_node_t *next = nlist_node_next(node);
+        net_timer_t *timer = nlist_entry(node, net_timer_t, node);
+        if (timer->curr > diff_ms) {
+            timer->curr -= diff_ms;
+            break;
+        }
+        //处理完了当前定时器还要处理的时间
+        diff_ms -= timer->curr;
+        //timer->curr < diff_ms
+        timer->curr = 0;
+        //为什么不在变扫描的时候执行proc？
+        //如果在proc中重新插入定时器，会影响当前的遍历，所以不在这里执行proc
+        nlist_remove(&timer_list, &timer->node);
+        nlist_insert_last(&wait_list, &timer->node);
+
+        node = next;
+    }
+
+    while ((node = nlist_remove_first(&wait_list))!= (nlist_node_t *)0) {
+        net_timer_t *timer = nlist_entry(node, net_timer_t, node);
+        timer->proc(timer,timer->arg);
+
+        if (timer->flags & NET_TIMER_RELOAD) {
+            timer->curr = timer->reload;
+            insert_timer(timer);
+        }
+    }
+
+    display_timer_list();
+    return NET_ERR_OK;
+}
