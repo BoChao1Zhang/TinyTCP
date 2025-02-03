@@ -39,7 +39,7 @@ net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
 net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
 net_err_t pktbuf_join(pktbuf_t *dest, pktbuf_t *src);
 net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
-net_err_t pktbuf_rest_acc(pktbuf_t* buf);
+net_err_t pktbuf_reset_acc(pktbuf_t* buf);
 net_err_t pktbuf_write(pktbuf_t *buf, const uint8_t *data, int size);
 net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *data, int size);
 net_err_t pktbuf_seek(pktbuf_t *buf, int offset);

@@ -37,6 +37,11 @@ net_err_t netdev_init() {
 
 
 	dbg_info(DBG_NETIF,"init netif done\n");
+
+	pktbuf_t *buf = pktbuf_alloc(32);
+	pktbuf_fill(buf,0x55,32);
+
+	netif_out(netif,(ipaddr_t *)0,buf);
 	return NET_ERR_OK;
 }
 
@@ -190,7 +195,7 @@ void pktbuf_test(void) {
 	pktbuf_join(buf,pktbuf_alloc(512));
 
 
-	pktbuf_rest_acc(buf);
+	pktbuf_reset_acc(buf);
 	static uint16_t temp[1024];
 	for (int i = 0;i<1024;i++) {
 		temp[i] = i;
@@ -198,7 +203,7 @@ void pktbuf_test(void) {
 	pktbuf_write(buf,(uint8_t *)temp,pktbuf_size(buf));
 
 	static uint16_t read_temp[1024];
-	pktbuf_rest_acc(buf);
+	pktbuf_reset_acc(buf);
 	plat_memset(read_temp,0,sizeof(read_temp));
 	if (pktbuf_read(buf,(uint8_t *)read_temp,pktbuf_size(buf))!=0) {
 		plat_printf("read error\n");

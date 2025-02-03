@@ -222,7 +222,7 @@ pktbuf_t *pktbuf_alloc(int size) {
 
         pktbuf_insert_blk_list(pktbuf, block, 1);
     }
-    pktbuf_rest_acc(pktbuf);
+    pktbuf_reset_acc(pktbuf);
     display_check_buf(pktbuf);
 
     return pktbuf;
@@ -435,7 +435,7 @@ net_err_t pktbuf_set_cont(pktbuf_t *buf, int size) {
     return NET_ERR_OK;
 }
 
-net_err_t pktbuf_rest_acc(pktbuf_t *buf) {
+net_err_t pktbuf_reset_acc(pktbuf_t *buf) {
     dbg_assert(buf->ref != 0, "buf ref == 0");
     if (buf) {
         buf->pos = 0;
@@ -526,7 +526,7 @@ net_err_t pktbuf_seek(pktbuf_t *buf, int offset) {
     }
     int move_bytes;
     if (offset < buf->pos) {
-        pktbuf_rest_acc(buf);
+        pktbuf_reset_acc(buf);
         move_bytes = offset;
     } else {
         move_bytes = offset - buf->pos;

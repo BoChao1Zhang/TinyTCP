@@ -5,6 +5,7 @@
 #include "netif.h"
 #include "mblock.h"
 #include "dbg.h"
+#include "ether.h"
 #include "exmsg.h"
 #include "pktbuf.h"
 #include "protocol.h"
@@ -226,7 +227,7 @@ net_err_t netif_put_in(netif_t *netif, pktbuf_t *buf, int tmo) {
 pktbuf_t * netif_get_in(netif_t *netif, int tmo) {
     pktbuf_t * buf = fixq_recv(&netif->in_q,tmo);
     if (buf) {
-        pktbuf_rest_acc(buf);
+        pktbuf_reset_acc(buf);
         return buf;
     }
 
@@ -246,7 +247,7 @@ net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo) {
 pktbuf_t * netif_get_out(netif_t *netif, int tmo) {
     pktbuf_t * buf = fixq_recv(&netif->out_q,tmo);
     if (buf) {
-        pktbuf_rest_acc(buf);
+        pktbuf_reset_acc(buf);
         return buf;
     }
 
@@ -262,15 +263,14 @@ net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
             return err;
         }
     } else {
-        netif->link_layer->out(netif,ipaddr,buf);
+        // netif->link_layer->out(netif,ipaddr,buf);
+        net_err_t err = netif_put_out(netif,buf,-1);
+        if (err < 0) {
+            dbg_info(DBG_NETIF, "send failed, queue full\n");
+            return err;
+        }
+        return netif->ops->xmit(netif);
     }
-    net_err_t err = netif_put_out(netif,buf,-1);
-    if (err < 0) {
-        dbg_info(DBG_NETIF, "send failed, queue full\n");
-        return err;
-    }
-
-    return netif->ops->xmit(netif);
 }
 
 net_err_t netif_register_layer(int type, const link_layer_t *layer) {
