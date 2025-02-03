@@ -392,7 +392,7 @@ net_err_t pktbuf_join(pktbuf_t *dest, pktbuf_t *src) {
 net_err_t pktbuf_set_cont(pktbuf_t *buf, int size) {
     dbg_assert(buf->ref != 0, "buf ref == 0");
     if (size > buf->total_size) {
-        dbg_error(DBG_BUF, "size to big %d > %d\n", buf->total_size, size);
+        dbg_error(DBG_BUF, "size to big %d > %d\n", size, buf->total_size);
         return NET_ERR_SIZE;
     }
 
