@@ -4,8 +4,30 @@
 
 #include "timer.h"
 #include "dbg.h"
+#include "sys_plat.h"
 
 static nlist_t timer_list;
+
+#if DBG_DISP_ENABLED(DBG_TIMER)
+
+static void display_timer_list(void) {
+    plat_printf("--------- timer list -----------\n");
+    nlist_node_t *node;
+    int index = 0;
+    nlist_foreach(node, &timer_list) {
+        net_timer_t *timer = nlist_entry(node, net_timer_t, node);
+
+        plat_printf("%d: %s,period =%d curr = %d reload = %d \n", index++, timer->name,
+                    timer->flags & NET_TIMER_RELOAD ? 1 : 0, timer->curr, timer->reload);
+    }
+
+    plat_printf("____________timer list end_______\n");
+}
+
+#else
+#define display_timer_list()
+#endif
+
 
 net_err_t net_timer_init(void) {
     dbg_info(DBG_TIMER, "timer init\n");
@@ -14,5 +36,67 @@ net_err_t net_timer_init(void) {
     return NET_ERR_OK;
 }
 
+static void insert_timer(net_timer_t *insert) {
+    nlist_node_t *node;
+    nlist_foreach(node,&timer_list) {
+        net_timer_t *curr = nlist_entry(node,net_timer_t,node);
+
+        if (insert->curr > curr->curr) {
+            insert->curr -= curr->curr;
+        } else if (insert->curr == curr->curr) {
+            insert->curr = 0;
+            nlist_insert(&timer_list, node, &insert->node);
+            return;
+        } else {
+            curr->curr -= insert->curr;
+            nlist_node_t* pre = nlist_node_pre(&curr->node);
+            if (pre) {
+                nlist_insert(&timer_list, pre, &insert->node);
+            } else {
+                nlist_insert_first(&timer_list, &insert->node);
+            }
+            return;
+        }
+
+    }
+    nlist_insert_last(&timer_list, &insert->node);
+}
+
 net_err_t net_timer_add(net_timer_t *timer, const char *name, timer_proc_t proc, void *arg, int ms, int flags) {
+    dbg_info(DBG_TIMER, "insert timer: %s\n", name);
+
+    plat_strncpy(timer->name, name, TIMER_NAME_SIZE);
+    timer->name[TIMER_NAME_SIZE - 1] = '\0';
+    timer->curr = ms;
+    timer->reload = ms;
+    timer->proc = proc;
+    timer->arg = arg;
+    timer->flags = flags;
+
+    insert_timer(timer);
+
+    display_timer_list();
+
+
+    return NET_ERR_OK;
+}
+
+net_err_t net_timer_remove(net_timer_t *timer) {
+    dbg_info(DBG_TIMER, "insert timer: %s\n", timer->name);
+    nlist_node_t *node;
+    nlist_foreach(node,&timer_list) {
+        net_timer_t *curr = nlist_entry(node,net_timer_t,node);
+        if (curr != timer) {
+            continue;
+        }
+        nlist_node_t *next = nlist_node_next(&timer->node);
+        if (next) {
+            net_timer_t *next_timer = nlist_entry(next, net_timer_t, node);
+            next_timer->curr += timer->curr;
+        }
+        nlist_remove(&timer_list, &timer->node);
+        break;
+    }
+    display_timer_list();
+    return NET_ERR_OK;
 }
