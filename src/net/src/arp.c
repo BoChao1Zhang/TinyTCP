@@ -38,7 +38,7 @@ static void arp_pkt_display(arp_pkt_t *packet) {
     plat_printf("    ptype: %04x\n",x_ntohs(packet->ptype));
     plat_printf("    hwlen: %d\n",packet->hwlen);
     plat_printf("    plen: %d\n", packet->plen);
-    plat_printf("   type: %d ", opcode);
+    plat_printf("    type: %d ", opcode);
     switch (opcode) {
         case ARP_REQUEST:
             plat_printf("request");
@@ -70,6 +70,42 @@ static net_err_t cache_init(void) {
     }
 
     return NET_ERR_OK;
+}
+
+statidc cache_clear_all(arp_entry_t* entry) {
+
+    nlist_node_t* first;
+    while (first = nlist_remove_first(&entry->buf_list)) {
+        pktbuf_t *buf = nlist_entry(first,pktbuf_t,node);
+        pktbuf_free(buf);
+    }
+}
+
+static arp_entry_t * cache_alloc(int force) {
+    arp_entry_t * entry= (arp_entry_t *)mblock_alloc(&cache_block,-1);
+    if (!entry && force) {
+        nlist_node_t *node = nlist_remove_last(&cache_list);
+        if (!node) {
+            dbg_warning(DBG_ARP, "alloc arp entry failed\n");
+            return (arp_entry_t *)0;
+        }
+
+        entry = nlist_entry(node,arp_entry_t,node);
+        cache_clear_all(entry);
+    }
+
+    if (entry) {
+        plat_memset(entry,0,sizeof(arp_entry_t));
+        entry->state = NET_ARP_FREE;
+        nlist_node_init(&entry->node);
+        nlist_init(&entry->buf_list);
+    }
+}
+
+static void cache_free(arp_entry_t *entry) {
+    cache_clear_all(entry);
+    nlist_remove(&cache_list,&entry->node);
+    mblock_free(&cache_block,entry);
 }
 
 net_err_t arp_init(void) {
