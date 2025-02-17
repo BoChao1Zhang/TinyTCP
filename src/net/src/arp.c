@@ -63,6 +63,18 @@ net_err_t arp_make_gratuitous(netif_t *netif) {
     return arp_make_request(netif,&netif->ipaddr);
 }
 
+net_err_t arp_make_reply(netif_t *netif, pktbuf_t *buf) {
+    arp_pkt_t * arp_pkt = (arp_pkt_t *)pktbuf_data(buf);
+    arp_pkt->opcode = x_htons(ARP_REPLY);
+    plat_memcpy(arp_pkt->target_hwaddr,arp_pkt->sender_hwaddr,ETHER_HWA_SIZE);
+    plat_memcpy(arp_pkt->target_ipaddr,arp_pkt->sender_ipaddr,IPV4_ADDR_SIZE);
+    plat_memcpy(arp_pkt->sender_hwaddr,netif->hwaddr.addr,ETHER_HWA_SIZE);
+    ipaddr_to_buf(&netif->ipaddr,arp_pkt->sender_ipaddr);
+
+    return ether_raw_out(netif,NET_PROTOCOL_ARP,arp_pkt->target_hwaddr,buf);
+
+}
+
 static net_err_t is_pkt_ok(arp_pkt_t *arp_packet, uint16_t size, netif_t *netif) {
     if (size < sizeof(arp_pkt_t)) {
         dbg_warning(DBG_ARP, "packet size error");
@@ -95,6 +107,11 @@ net_err_t arp_in(netif_t *netif, pktbuf_t *buf) {
     arp_pkt_t *arp_packet = (arp_pkt_t *)pktbuf_data(buf);
     if (is_pkt_ok(arp_packet,buf->total_size,netif) != NET_ERR_OK) {
         return err;
+    }
+
+    if (x_ntohs(arp_packet->opcode) == ARP_REQUEST ) {
+        dbg_info(DBG_ARP,"arp request");
+        return arp_make_reply(netif,buf);
     }
 
     pktbuf_free(buf);
