@@ -19,16 +19,16 @@ static void arp_entry_display(arp_entry_t *entry) {
 }
 
 static void arp_tbl_display(void) {
-    plat_printf("------- arp tbl start---------");
+    plat_printf("------- arp tbl start---------\n");
     arp_entry_t *entry = cache_tbl;
-    for (int i = 0; i < ARP_CACHE_SIZE; i++) {
-        if (entry->state != NET_ARP_FREE && entry->state != NET_ARP_RESOLVED) {
+    for (int i = 0; i < ARP_CACHE_SIZE; i++,entry++) {
+        if (entry->state != NET_ARP_WAITING && entry->state != NET_ARP_RESOLVED) {
             continue;
         }
 
         arp_entry_display(entry);
     }
-    plat_printf("------- arp tbl end---------");
+    plat_printf("------- arp tbl end---------\n");
 }
 
 static void arp_pkt_display(arp_pkt_t *packet) {
@@ -72,7 +72,7 @@ static net_err_t cache_init(void) {
     return NET_ERR_OK;
 }
 
-statidc cache_clear_all(arp_entry_t* entry) {
+static void cache_clear_all(arp_entry_t* entry) {
 
     nlist_node_t* first;
     while (first = nlist_remove_first(&entry->buf_list)) {
@@ -100,12 +100,83 @@ static arp_entry_t * cache_alloc(int force) {
         nlist_node_init(&entry->node);
         nlist_init(&entry->buf_list);
     }
+
+    return entry;
 }
 
 static void cache_free(arp_entry_t *entry) {
     cache_clear_all(entry);
     nlist_remove(&cache_list,&entry->node);
     mblock_free(&cache_block,entry);
+}
+
+static arp_entry_t * cache_find(uint8_t *ip) {
+    nlist_node_t *node;
+    nlist_foreach(node,&cache_list) {
+        arp_entry_t* entry = nlist_entry(node,arp_entry_t,node);
+        if (plat_memcmp(ip,entry->ipaddr,IPV4_ADDR_SIZE) == 0) {
+            nlist_remove(&cache_list,&entry->node);
+            nlist_insert_first(&cache_list,&entry->node);
+            return entry;
+        }
+    }
+    return (arp_entry_t *)0;
+}
+
+static void cache_entry_set(arp_entry_t* entry, uint8_t* ip,uint8_t* hwaddr, netif_t* netif,int state) {
+    plat_memcpy(entry->ipaddr,ip,IPV4_ADDR_SIZE);
+    plat_memcpy(entry->hwaddr,hwaddr,ETHER_HWA_SIZE);
+    entry->state = state;
+    entry->netif = netif;
+    entry->tmo = 0;
+    entry->retry = 0;
+}
+
+static net_err_t cache_send_all(arp_entry_t *entry) {
+    dbg_info(DBG_ARP, "send all packet");
+    dbg_dump_ip_buf("ip:",entry->ipaddr);
+    nlist_node_t* first;
+    while (first = nlist_remove_first(&entry->buf_list)) {
+        pktbuf_t *buf = nlist_entry(first,pktbuf_t,node);
+
+        net_err_t err = ether_raw_out(entry->netif,NET_PROTOCOL_IPV4, entry->hwaddr, buf);
+        if (err < 0) {
+            pktbuf_free(buf);
+        }
+        pktbuf_free(buf);
+    }
+
+    return  NET_ERR_OK;
+}
+
+static net_err_t cache_insert(netif_t *netif, uint8_t* ip,uint8_t* hwaddr, int force) {
+    arp_entry_t *entry = cache_find(ip);
+    if (!entry) {
+        entry = cache_alloc(force);
+        if (!entry) {
+            dbg_dump_ip_buf("alloc failed. ip:",ip);
+            return NET_ERR_NONE;
+        }
+
+        cache_entry_set(entry,ip,hwaddr,netif,NET_ARP_RESOLVED);
+        nlist_insert_first(&cache_list,&entry->node);
+    } else {
+        dbg_dump_ip_buf("update arp entry ip:",ip);
+        cache_entry_set(entry,ip,hwaddr,netif,NET_ARP_RESOLVED);
+        if (nlist_first(&cache_list) != &entry->node) {
+            nlist_remove(&cache_list,&entry->node);
+            nlist_insert_first(&cache_list,&entry->node);
+        }
+
+        net_err_t err = cache_send_all(entry);
+        if (err < 0) {
+            dbg_error(DBG_ARP, "send arp failed\n");
+            return err;
+        }
+    }
+
+    arp_tbl_display();
+    return NET_ERR_OK;
 }
 
 net_err_t arp_init(void) {
@@ -118,6 +189,16 @@ net_err_t arp_init(void) {
 }
 
 net_err_t arp_make_request(netif_t *netif, ipaddr_t *dest) {
+    uint8_t *ip = (uint8_t*)dest->a_addr;
+    ip[0] = 0x1;
+    cache_insert(netif, ip, netif->hwaddr.addr,1);
+    ip[0] = 0x2;
+    cache_insert(netif, ip, netif->hwaddr.addr,1);
+    ip[0] = 0x3;
+    cache_insert(netif, ip, netif->hwaddr.addr,1);
+    cache_insert(netif, ip, netif->hwaddr.addr,1);
+
+
     pktbuf_t *buf = pktbuf_alloc(sizeof(arp_pkt_t));
     if (buf == (pktbuf_t *) 0) {
         dbg_error(DBG_ARP, "alloc pktbuf failed");
