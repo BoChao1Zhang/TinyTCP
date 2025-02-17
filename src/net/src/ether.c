@@ -73,6 +73,9 @@ static net_err_t ether_in(struct _netif_t *netif, pktbuf_t * buf) {
 }
 
 static net_err_t ether_out(struct _netif_t *netif, ipaddr_t * dest ,pktbuf_t * data) {
+    if (ipaddr_is_equal(&netif->ipaddr,dest)) {
+        return ether_raw_out(netif,NET_PROTOCOL_IPV4,netif->hwaddr.addr,data);
+    }
     return NET_ERR_OK;
 }
 

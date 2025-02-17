@@ -16,6 +16,7 @@
 #define DBG_ETHER   DBG_LEVEL_INFO
 #define DBG_TOOLS   DBG_LEVEL_INFO
 #define DBG_TIMER   DBG_LEVEL_NONE
+#define DBG_ARP     DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE       1
 
@@ -37,4 +38,7 @@
 
 //定时器相关
 #define TIMER_NAME_SIZE     32
+
+//arp
+#define ARP_CACHE_SIZE       50
 #endif //NET_CFG_H

@@ -52,3 +52,7 @@ void ipaddr_copy(ipaddr_t *dest, const ipaddr_t *src) {
     dest->type = src->type;
     dest->q_addr = src->q_addr;
 }
+
+int ipaddr_is_equal(const ipaddr_t *ipaddr1, const ipaddr_t *ipaddr2) {
+    return ipaddr1->q_addr == ipaddr2->q_addr;
+}
