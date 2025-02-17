@@ -31,7 +31,7 @@ static void display_ether_pkt(char * title, ether_pkt_t *pkt, int total_size) {
     plat_printf("\n");
 }
 #else
-
+#define display_ether_pkt(title,pkt,total_size)
 #endif
 
 

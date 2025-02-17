@@ -15,20 +15,6 @@ static pktbuf_t pktbuf_buffer[PKTBUF_BUF_CNT];
 
 
 #if DBG_DISP_ENABLED(DBG_BUF)
-
-static int total_blk_remain(pktbuf_t *buf) {
-   return buf->total_size - buf->pos;
-}
-
-static int curr_blk_remain(pktbuf_t *buf) {
-   pktblk_t *blk = buf->curr_blk;
-     if (!blk) {
-         return 0;
-     }
-
-    return (int)(blk->data + blk->size - buf->blk_offset);
-}
-
 static void display_check_buf(pktbuf_t *buf) {
     if (!buf) {
         dbg_error(DBG_BUF, "invalid buf, buffer=0\n");
@@ -69,6 +55,19 @@ static void display_check_buf(pktbuf_t *buf) {
 #else
 #define display_check_buf(buf)
 #endif
+
+static int total_blk_remain(pktbuf_t *buf) {
+    return buf->total_size - buf->pos;
+}
+
+static int curr_blk_remain(pktbuf_t *buf) {
+    pktblk_t *blk = buf->curr_blk;
+    if (!blk) {
+        return 0;
+    }
+
+    return (int)(blk->data + blk->size - buf->blk_offset);
+}
 
 
 net_err_t pktbuf_init() {

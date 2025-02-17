@@ -304,7 +304,7 @@ void basic_test(void) {
 	// mblock_test();
 	// pktbuf_test();
 	// netif_test();
-	timer_test();
+	// timer_test();
 
 	uint32_t v1 = x_ntohl(0x12345678);
 	uint32_t v2 = x_ntohs(0x1234);
@@ -319,7 +319,7 @@ int main (void) {
 	net_init();
 	netdev_init();
 
-	basic_test();
+	// basic_test();
 	net_start();
 
 

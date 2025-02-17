@@ -26,6 +26,7 @@ void dbg_println(int m_level,int s_level, const char * file, const char * func, 
 
 void dbg_dump_hwaddr(const char *msg, const uint8_t *data, int len);
 void dbg_dump_ip(const char *msg, ipaddr_t *ipaddr);
+void dbg_dump_ip_buf(const char *msg, uint8_t *ipaddr);
 
 #define dbg_info(module,fmt,...) dbg_print(module,DBG_LEVEL_INFO,__FILE__,__FUNCTION__,__LINE__,fmt,##__VA_ARGS__)
 #define dbg_warning(module,fmt,...) dbg_print(module,DBG_LEVEL_WARNING,__FILE__,__FUNCTION__,__LINE__,fmt,##__VA_ARGS__)
