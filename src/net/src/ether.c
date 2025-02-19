@@ -97,7 +97,7 @@ static net_err_t ether_out(struct _netif_t *netif, ipaddr_t * dest ,pktbuf_t * d
         return ether_raw_out(netif,NET_PROTOCOL_IPV4,netif->hwaddr.addr,data);
     }
 
-    arp_make_request(netif,dest);
+    return arp_resolve(netif,dest,data);
     return NET_ERR_OK;
 }
 

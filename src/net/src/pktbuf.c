@@ -435,7 +435,7 @@ net_err_t pktbuf_set_cont(pktbuf_t *buf, int size) {
 }
 
 net_err_t pktbuf_reset_acc(pktbuf_t *buf) {
-    dbg_assert(buf->ref != 0, "buf ref == 0");
+    dbg_assert(buf->ref != 0, "buf ref == 0\n");
     if (buf) {
         buf->pos = 0;
         buf->curr_blk = pktbuf_first_blk(buf);

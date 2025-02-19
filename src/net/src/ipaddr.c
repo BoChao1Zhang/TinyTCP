@@ -60,3 +60,8 @@ int ipaddr_is_equal(const ipaddr_t *ipaddr1, const ipaddr_t *ipaddr2) {
 void ipaddr_to_buf(ipaddr_t *src, uint8_t *in_buf) {
     *(uint32_t *)in_buf = src->q_addr;
 }
+
+void ipaddr_from_buf(ipaddr_t *dest, uint8_t *ip_buf) {
+    dest->type = IPADDR_V4;
+    dest->q_addr = *(uint32_t *)ip_buf;
+}

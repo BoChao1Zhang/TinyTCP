@@ -50,6 +50,7 @@ net_err_t arp_make_request(netif_t* netif,ipaddr_t* dset);
 net_err_t arp_make_gratuitous(netif_t *netif);
 net_err_t arp_make_reply(netif_t* netif,pktbuf_t *buf);
 net_err_t arp_in(netif_t* netif,pktbuf_t* buf);
+net_err_t arp_resolve(netif_t *netif,ipaddr_t* dest,pktbuf_t* buf);
 
 
 #endif //ARP_H

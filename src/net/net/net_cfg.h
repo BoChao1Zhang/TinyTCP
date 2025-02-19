@@ -41,4 +41,5 @@
 
 //arp
 #define ARP_CACHE_SIZE       50
+#define ARP_MAX_PKT_WAIT     5
 #endif //NET_CFG_H
