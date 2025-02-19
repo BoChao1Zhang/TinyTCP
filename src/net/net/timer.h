@@ -43,7 +43,7 @@ net_err_t net_timer_init(void);
  * @param proc 定时器触发时执行的回调函数
  * @param arg 回调函数的参数，可以是任意类型
  * @param ms 定时器的触发时间间隔，单位为毫秒
- * @param flags 定时器的选项标志，控制定时器的行为
+ * @param flags 定时器的选项标，控制志定时器的行为
  *
  * @return 网络错误代码，表示添加结果
  */

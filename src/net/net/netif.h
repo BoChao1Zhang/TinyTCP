@@ -19,6 +19,8 @@ typedef struct _netif_hwaddr_t {
 
 struct _netif_t;
 
+
+//下层的输出接口
 typedef struct _netif_ops_t {
     net_err_t (*open)(struct _netif_t * netif, void *data);
     void (*close)(struct  _netif_t * netif);
