@@ -40,6 +40,7 @@ static net_err_t ether_open(struct _netif_t *netif) {
 }
 
 static void ether_close(struct _netif_t *netif) {
+    arp_clear(netif);
 
 }
 static net_err_t is_pkt_ok(ether_pkt_t *pkt,int total_size) {

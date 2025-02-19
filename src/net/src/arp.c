@@ -3,7 +3,11 @@
 #include "mblock.h"
 #include "tools.h"
 #include "protocol.h"
+#include "timer.h"
 
+#define to_scan_cnt(tmo)    (tmo / ARP_TIMER_TMO )
+
+static net_timer_t cache_timer;
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];
 static mblock_t cache_block;
 static nlist_t cache_list;
@@ -128,8 +132,12 @@ static void cache_entry_set(arp_entry_t* entry, uint8_t* ip,uint8_t* hwaddr, net
     plat_memcpy(entry->hwaddr,hwaddr,ETHER_HWA_SIZE);
     entry->state = state;
     entry->netif = netif;
-    entry->tmo = 0;
-    entry->retry = 0;
+
+    if (state == NET_ARP_RESOLVED) {
+        entry->tmo = to_scan_cnt(ARP_ENTRY_STABLE_TMO);
+    } else {
+        entry->retry = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+    }
 }
 
 static net_err_t cache_send_all(arp_entry_t *entry) {
@@ -182,10 +190,76 @@ static net_err_t cache_insert(netif_t *netif, uint8_t* ip,uint8_t* hwaddr, int f
     return NET_ERR_OK;
 }
 
+static void arp_cache_tmo(net_timer_t * timer, void *arg) {
+    int changed_cnt = 0;
+
+
+    nlist_node_t * curr, *next;
+
+    for (curr = cache_list.first; curr; curr = next) {
+        next = nlist_node_next(curr);
+
+        arp_entry_t *entry = nlist_entry(curr,arp_entry_t,node);
+
+        if (--entry->tmo > 0) {
+            continue;
+        }
+        changed_cnt ++;
+        switch (entry->state) {
+            case NET_ARP_RESOLVED: {
+                dbg_info(DBG_ARP, "state to pending\n");
+                arp_entry_display(entry);
+                ipaddr_t ipaddr;
+                ipaddr_from_buf(&ipaddr, entry->ipaddr);
+
+                entry->state = NET_ARP_WAITING;
+                entry->tmo = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+                entry->retry = ARP_ENTRY_RETRY_CNT;
+                arp_make_request(entry->netif,&ipaddr);
+
+                break;
+            }
+            case NET_ARP_WAITING: {
+                if (--entry->retry == 0) {
+                    dbg_info(DBG_ARP,"pending tmo, free it\n");
+                    arp_entry_display(entry);
+                    cache_free(entry);
+                } else {
+                    dbg_info(DBG_ARP, "pending tmo,retry:\n");
+                    arp_entry_display(entry);
+                    ipaddr_t ipaddr;
+                    ipaddr_from_buf(&ipaddr, entry->ipaddr);
+
+                    entry->state = NET_ARP_WAITING;
+                    entry->tmo = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+                    arp_make_request(entry->netif,&ipaddr);
+                }
+                break;
+            }
+            default: {
+                dbg_error(DBG_ARP, "unknown state\n");
+                break;
+            }
+        }
+    }
+
+    if (changed_cnt) {
+        dbg_info(DBG_ARP,"%d arp entry changed\n",changed_cnt);
+        arp_tbl_display();
+    }
+
+}
+
 net_err_t arp_init(void) {
     net_err_t err = cache_init();
     if (err < 0) {
         dbg_error(DBG_ARP, "arp cache init failed\n");
+        return err;
+    }
+
+    err = net_timer_add(&cache_timer,"arp timer",arp_cache_tmo,(void *)0, ARP_TIMER_TMO * 1000, NET_TIMER_RELOAD);
+    if (err < 0) {
+        dbg_error(DBG_ARP, "arp timer init failed\n");
         return err;
     }
     return NET_ERR_OK;
@@ -330,3 +404,15 @@ net_err_t arp_resolve(netif_t *netif, ipaddr_t *dest, pktbuf_t *buf) {
 
     return NET_ERR_OK;
 }
+
+void arp_clear(netif_t *netif) {
+    nlist_node_t *node,*next;
+    for (node = nlist_first(&cache_list);node;node = next) {
+        next = nlist_node_next(node);
+        arp_entry_t* entry = nlist_entry(node, arp_entry_t, node);
+        if (entry->netif == netif) {
+            nlist_remove(&cache_list, node);
+        }
+    }
+}
+
