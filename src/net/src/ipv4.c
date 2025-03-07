@@ -1,0 +1,120 @@
+//
+// Created by bc on 25-3-6.
+//
+
+#include "ipv4.h"
+
+#include "dbg.h"
+#include "protocol.h"
+#include "tools.h"
+
+
+net_err_t ipv4_init(void)
+{
+    dbg_info(DBG_IP,"init ip \n");
+
+
+    dbg_info(DBG_IP,"init done \n");
+
+
+
+    return NET_ERR_OK;
+}
+
+static net_err_t is_pkt_ok(ipv4_pkt_t *pkt, int size,netif_t *netif) {
+    if (pkt->hdr.version != NET_VERSION_IPV4) {
+        dbg_warning(DBG_IP,"invalid ip version\n");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    int hdr_len  = ipv4_hdr_size(pkt);
+    if (hdr_len < sizeof(ipv4_hdr_t)) {
+        dbg_warning(DBG_IP,"invalid hdr size\n");
+        return NET_ERR_SIZE;
+    }
+
+    int total_size = x_ntohs(pkt->hdr.total_len);
+    if ((total_size < sizeof(ipv4_hdr_t)) || (size < total_size)) {
+        dbg_warning(DBG_IP,"invalid ipv4 packet size\n");
+    }
+
+    if (pkt->hdr.hdr_checksum) {
+        uint16_t c = checksum16(pkt,hdr_len,0,1);
+        if (c!=0) {
+            dbg_warning(DBG_IP,"invalid checksum\n");
+            return NET_ERR_BROKEN;
+        }
+    }
+
+    return NET_ERR_OK;
+}
+
+static void iphdr_ntohs(ipv4_pkt_t *pkt) {
+    pkt->hdr.total_len = x_ntohs(pkt->hdr.total_len);
+    pkt->hdr.id = x_ntohs(pkt->hdr.id);
+    pkt->hdr.frag_all = x_ntohs(pkt->hdr.frag_all);
+}
+
+static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipaddr_t *dest_ip) {
+    ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+
+    switch (pkt->hdr.protocol) {
+        case NET_PROTOCOL_ICMPv4: {
+            break;
+        }
+        case NET_PROTOCOL_TCP:{
+            break;
+        }
+        case NET_PROTOCOL_UDP: {
+            break;
+        }
+        default: {
+            dbg_warning(DBG_IP,"unknown protocol");
+            break;
+        }
+    }
+    return NET_ERR_UNREACH;
+}
+
+net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
+    dbg_info(DBG_IP, "ip in\n");
+
+    net_err_t err = pktbuf_set_cont(buf,sizeof(ipv4_hdr_t));
+    if (err < 0) {
+        dbg_error(DBG_IP, "adjust header,err - %d\n",err);
+        return err;
+    }
+
+    ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+
+    if (is_pkt_ok(pkt,buf->total_size,netif)!= NET_ERR_OK) {
+        dbg_warning(DBG_INIT, "packet is broken.");
+        return err;
+    }
+
+    iphdr_ntohs(pkt);
+
+    err = pktbuf_resize(buf,pkt->hdr.total_len);
+
+    ipaddr_t dest_ip,src_ip;
+    ipaddr_from_buf(&dest_ip,pkt->hdr.dest_ip);
+    ipaddr_from_buf(&src_ip,pkt->hdr.src_ip);
+
+
+    if (err < 0) {
+        dbg_error(DBG_IP, "resize packet buffer failed\n");
+        return err;
+    }
+
+    //192.168.74.2 --- 192.168.7.255 --- 255.255.255.255
+    if (!ipaddr_is_match(&dest_ip, &netif->ipaddr, &netif->netmask)) {
+        dbg_error(DBG_IP, "ip not match");
+        return NET_ERR_UNREACH;
+    }
+
+    err = ip_normal_in(netif,buf,&src_ip,&dest_ip);
+
+
+    pktbuf_free(buf);
+    return NET_ERR_OK;
+}

@@ -5,6 +5,7 @@
 
 #include "arp.h"
 #include "dbg.h"
+#include "ipv4.h"
 #include "netif.h"
 #include "tools.h"
 #include "protocol.h"
@@ -83,6 +84,14 @@ static net_err_t ether_in(struct _netif_t *netif, pktbuf_t * buf) {
     }
 
     case NET_PROTOCOL_IPV4: {
+        err = pktbuf_remove_header(buf,sizeof(ether_hdr_t));
+        if (err <0 ) {
+            dbg_error(DBG_ETHER,"remove header error %d",err);
+            return NET_ERR_SIZE;
+        }
+
+        return ipv4_in(netif,buf);
+
         break;
     }
     default:

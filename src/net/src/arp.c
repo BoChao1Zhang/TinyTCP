@@ -62,6 +62,7 @@ static void arp_pkt_display(arp_pkt_t *packet) {
 #else
 #define arp_tbl_display()
 #define arp_pkt_display(packet)
+#define arp_entry_display(entry)
 #endif
 
 static net_err_t cache_init(void) {
@@ -172,7 +173,7 @@ static net_err_t cache_insert(netif_t *netif, uint8_t* ip,uint8_t* hwaddr, int f
         cache_entry_set(entry,ip,hwaddr,netif,NET_ARP_RESOLVED);
         nlist_insert_first(&cache_list,&entry->node);
     } else {
-        dbg_dump_ip_buf("update arp entry ip:\n",ip);
+        // dbg_dump_ip_buf("update arp entry ip:\n",ip);
         cache_entry_set(entry,ip,hwaddr,netif,NET_ARP_RESOLVED);
         if (nlist_first(&cache_list) != &entry->node) {
             nlist_remove(&cache_list,&entry->node);

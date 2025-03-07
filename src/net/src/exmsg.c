@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "sys_plat.h"
 #include "fixq.h"
+#include "ipv4.h"
 #include "mblock.h"
 #include "timer.h"
 #include "sys.h"
@@ -45,7 +46,11 @@ static net_err_t do_netif_in(exmsg_t *msg) {
                 dbg_warning(DBG_MSG,"netif in fail, error=%d\n",err);
             }
         } else {
-            pktbuf_free(buf);
+            net_err_t err = ipv4_in(netif,buf);
+            if (err < 0) {
+                pktbuf_free(buf);
+                dbg_warning(DBG_MSG,"netif in fail, error=%d\n",err);
+            }
 
         }
     }

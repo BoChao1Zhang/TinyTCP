@@ -38,4 +38,6 @@ static inline uint32_t swap_u32(uint32_t v) {
 
 net_err_t tools_init(void);
 
+uint16_t checksum16(void *buf,uint16_t len,uint32_t pre_sum, int complement);
+
 #endif //TOOLS_H
