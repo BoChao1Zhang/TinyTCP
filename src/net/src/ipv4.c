@@ -5,6 +5,7 @@
 #include "ipv4.h"
 
 #include "dbg.h"
+#include "icmpv4.h"
 #include "protocol.h"
 #include "tools.h"
 
@@ -36,8 +37,6 @@ static void display_ip_packet(ipv4_pkt_t* pkt) {
 net_err_t ipv4_init(void)
 {
     dbg_info(DBG_IP,"init ip \n");
-
-
     dbg_info(DBG_IP,"init done \n");
 
 
@@ -91,7 +90,13 @@ static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipa
     display_ip_packet(pkt);
     switch (pkt->hdr.protocol) {
         case NET_PROTOCOL_ICMPv4: {
-            break;
+            //为什么不使用源地址？
+            net_err_t err = icmpv4_in(src_ip,&netif->ipaddr,buf);
+            if (err < 0) {
+                dbg_warning(DBG_IP,"icmpv4_in failed\n");
+                return err;
+            }
+            return NET_ERR_OK;
         }
         case NET_PROTOCOL_TCP:{
             break;
@@ -126,71 +131,64 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
     iphdr_ntohs(pkt);
 
     err = pktbuf_resize(buf,pkt->hdr.total_len);
+    if (err < 0) {
+        dbg_error(DBG_IP, "ip packet resize failed. err=%d\n", err);
+        return err;
+    }
 
     ipaddr_t dest_ip,src_ip;
     ipaddr_from_buf(&dest_ip,pkt->hdr.dest_ip);
     ipaddr_from_buf(&src_ip,pkt->hdr.src_ip);
 
-
-    if (err < 0) {
-        dbg_error(DBG_IP, "resize packet buffer failed\n");
-        return err;
-    }
-
     //192.168.74.2 --- 192.168.7.255 --- 255.255.255.255
     if (!ipaddr_is_match(&dest_ip, &netif->ipaddr, &netif->netmask)) {
         dbg_error(DBG_IP, "ip not match");
+        pktbuf_free(buf);
         return NET_ERR_UNREACH;
     }
 
     err = ip_normal_in(netif,buf,&src_ip,&dest_ip);
-
-
-    pktbuf_free(buf);
-    return NET_ERR_OK;
+    return err;
 }
 
-net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t* src, pktbuf_t *buf) {
-    dbg_info(DBG_IP, "ip out\n");
+net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t * src, pktbuf_t* buf) {
+    dbg_info(DBG_IP,"send an ip packet.\n");
 
-    net_err_t err = pktbuf_add_header(buf,sizeof(ipv4_hdr_t),1);
+    // 调整读写位置，预留IP包头，注意要连续存储
+    net_err_t err = pktbuf_add_header(buf, sizeof(ipv4_hdr_t), 1);
     if (err < 0) {
-        dbg_error(DBG_IP, "add header,err %d\n",err);
+        dbg_error(DBG_IP, "no enough space for ip header, curr size: %d\n", buf->total_size);
         return NET_ERR_SIZE;
     }
 
-    ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+    // 构建IP数据包
+    ipv4_pkt_t * pkt = (ipv4_pkt_t*)pktbuf_data(buf);
     pkt->hdr.shdr_all = 0;
     pkt->hdr.version = NET_VERSION_IPV4;
     ipv4_set_hdr_size(pkt,sizeof(ipv4_hdr_t));
     pkt->hdr.total_len = buf->total_size;
-    pkt->hdr.id = packet_id++;
-    pkt->hdr.frag_all = 0;
+    pkt->hdr.id = packet_id++;        // 计算不断自增
+    pkt->hdr.frag_all = 0;         //
     pkt->hdr.ttl = NET_IP_DEFAULT_TTL;
     pkt->hdr.protocol = protocol;
     pkt->hdr.hdr_checksum = 0;
-    ipaddr_to_buf(src,pkt->hdr.src_ip);
-    ipaddr_to_buf(dest,pkt->hdr.dest_ip);
+    ipaddr_to_buf(src, pkt->hdr.src_ip);
+    ipaddr_to_buf(dest, pkt->hdr.dest_ip);
+
+    // 大小端转换
     iphdr_htons(pkt);
-    //为什么要复位？ buf的读写指针已经被修改了
+
+    // 计算校验和
     pktbuf_reset_acc(buf);
+    pkt->hdr.hdr_checksum = pktbuf_checksum16(buf, ipv4_hdr_size(pkt), 0, 1);
 
-    //为什么不做大小端的转换？ 不做大小端的转化也会通过
-    pkt->hdr.hdr_checksum = pktbuf_checksum16(buf,ipv4_hdr_size(pkt),0,1);
-
-
+    // 开始发送
     display_ip_packet(pkt);
-
-    err = netif_out(netif_get_default(),dest,buf);
+    err = netif_out(netif_get_default(), dest, buf);
     if (err < 0) {
-        dbg_warning(DBG_IP, "send ip failed");
+        dbg_warning(DBG_IP, "send ip packet failed. error = %d\n", err);
         return err;
     }
 
-
     return NET_ERR_OK;
-
-
-
-
 }

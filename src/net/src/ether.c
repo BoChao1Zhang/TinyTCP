@@ -91,15 +91,11 @@ static net_err_t ether_in(struct _netif_t *netif, pktbuf_t * buf) {
         }
 
         return ipv4_in(netif,buf);
-
-        break;
     }
     default:
         dbg_warning(DBG_ETHER, "remove header failed.");
         return NET_ERR_NOT_SUPPORT;
     }
-    pktbuf_free(buf);
-    return NET_ERR_OK;
 }
 
 static net_err_t ether_out(struct _netif_t *netif, ipaddr_t * dest ,pktbuf_t * data) {

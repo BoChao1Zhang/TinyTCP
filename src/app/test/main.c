@@ -46,7 +46,7 @@ net_err_t netdev_init() {
 	ipaddr_from_str(&dest,friend0_ip);
 	ipaddr_from_str(&src,netdev0_ip);
 	// netif_out(netif,(ipaddr_t *)&dest,buf);
-	ipv4_out(0,&dest,&src,buf);
+	//ipv4_out(0,&dest,&src,buf);
 	return NET_ERR_OK;
 }
 
