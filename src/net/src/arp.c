@@ -143,7 +143,7 @@ static void cache_entry_set(arp_entry_t* entry, uint8_t* ip,uint8_t* hwaddr, net
 
 static net_err_t cache_send_all(arp_entry_t *entry) {
     dbg_info(DBG_ARP, "send all packet\n");
-    dbg_dump_ip_buf("ip:",entry->ipaddr);
+    dbg_dump_ip_buf(DBG_ARP,"ip:",entry->ipaddr);
     nlist_node_t* first;
     while (first = nlist_remove_first(&entry->buf_list)) {
         pktbuf_t *buf = nlist_entry(first,pktbuf_t,node);
@@ -166,7 +166,7 @@ static net_err_t cache_insert(netif_t *netif, uint8_t* ip,uint8_t* hwaddr, int f
     if (!entry) {
         entry = cache_alloc(force);
         if (!entry) {
-            dbg_dump_ip_buf("alloc failed. ip:",ip);
+            dbg_dump_ip_buf(DBG_ARP,"alloc failed. ip:",ip);
             return NET_ERR_NONE;
         }
 

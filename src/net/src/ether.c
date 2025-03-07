@@ -14,8 +14,8 @@ static void display_ether_pkt(char * title, ether_pkt_t *pkt, int total_size) {
     ether_hdr_t *hdr = &pkt->hdr;
     plat_printf("------- %s --------\n", title);
     plat_printf("\t len : %d bytes \n",total_size);
-    dbg_dump_hwaddr("\t dest: ",hdr->dest,ETHER_HWA_SIZE);
-    dbg_dump_hwaddr("\t src: ",hdr->src,ETHER_HWA_SIZE);
+    dbg_dump_mac(DBG_ETHER,"\t dest: ",hdr->dest,ETHER_HWA_SIZE);
+    dbg_dump_mac(DBG_ETHER,"\t src: ",hdr->src,ETHER_HWA_SIZE);
     plat_printf("\t type: %x \t",x_ntohs(hdr->protocol));
 
     switch (x_htons(hdr->protocol)) {

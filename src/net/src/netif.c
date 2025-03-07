@@ -43,7 +43,7 @@ void display_netif_list(void) {
             default: break;
         }
         plat_printf("mtu = %d\n",netif->mtu);
-        dbg_dump_hwaddr("hwaddr: ",netif->hwaddr.addr,netif->hwaddr.len);
+        dbg_dump_mac(DBG_NETIF,"hwaddr: ",netif->hwaddr.addr,netif->hwaddr.len);
         dbg_dump_ip("ipaddr: ",&netif->ipaddr);
         dbg_dump_ip("netmask: ",&netif->netmask);
         dbg_dump_ip("gateway: ",&netif->gateway);

@@ -8,6 +8,28 @@
 #include "protocol.h"
 #include "tools.h"
 
+#if DBG_DISP_ENABLED(DBG_IP)
+
+static void display_ip_packet(ipv4_pkt_t* pkt) {
+    ipv4_hdr_t* ip_hdr = (ipv4_hdr_t*)&pkt->hdr;
+
+    plat_printf("--------------- ip ------------------ \n");
+    plat_printf("    Version:%d\n", ip_hdr->version);
+    plat_printf("    Header len:%d bytes\n", ipv4_hdr_size(pkt));
+    plat_printf("    Totoal len: %d bytes\n", ip_hdr->total_len);
+    plat_printf("    Id:%d\n", ip_hdr->id);
+    plat_printf("    TTL: %d\n", ip_hdr->ttl);
+    plat_printf("    Protocol: %d\n", ip_hdr->protocol);
+    plat_printf("    Header checksum: 0x%04x\n", ip_hdr->hdr_checksum);
+    dbg_dump_ip_buf(DBG_IP, "    src ip:", ip_hdr->dest_ip);
+    dbg_dump_ip_buf(DBG_IP, "    dest ip:", ip_hdr->src_ip);
+    plat_printf("--------------- ip end ------------------ \n");
+}
+
+#else
+#define display_ip_packet(pkt)
+#endif
+
 
 net_err_t ipv4_init(void)
 {
@@ -57,7 +79,7 @@ static void iphdr_ntohs(ipv4_pkt_t *pkt) {
 
 static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipaddr_t *dest_ip) {
     ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
-
+    display_ip_packet(pkt);
     switch (pkt->hdr.protocol) {
         case NET_PROTOCOL_ICMPv4: {
             break;
