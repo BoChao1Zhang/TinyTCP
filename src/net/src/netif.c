@@ -255,6 +255,10 @@ pktbuf_t * netif_get_out(netif_t *netif, int tmo) {
     return (pktbuf_t *)0;
 }
 
+netif_t * netif_get_default(void) {
+    return netif_default;
+}
+
 net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
     if (netif->link_layer) {
         net_err_t err = netif->link_layer->out(netif,ipaddr,buf);

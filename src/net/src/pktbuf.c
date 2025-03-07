@@ -6,6 +6,7 @@
 #include "dbg.h"
 #include "mblock.h"
 #include "nlocker.h"
+#include "tools.h"
 
 static nlocker_t locker;
 static mblock_t pktblk_mblock;
@@ -586,6 +587,32 @@ net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size) {
         move_forward(buf,curr_fill);
     }
     return NET_ERR_OK;
+}
+
+//对于tcp 和 udp 校验时需要添加伪首部
+//xxxx                       pktbuf
+//pre_sum,complement = 0     pre_sum,complement = 1
+net_err_t pktbuf_checksum16(pktbuf_t *buf, int size, uint32_t pre_sum, int complement) {
+    dbg_assert(buf->ref != 0, "buf ref == 0");
+
+    int remain_size = total_blk_remain(buf);
+    if (remain_size < size) {
+        dbg_error(DBG_BUF, "no space to checksum %d < %d\n", remain_size, size);
+    }
+
+    uint32_t sum = pre_sum;
+    while (size > 0) {
+        int blk_size = curr_blk_remain(buf);
+        int curr_size = (blk_size > size) ? size : blk_size;
+
+        sum = checksum16(buf->blk_offset,curr_size,sum,0);
+
+        move_forward(buf,curr_size);
+        size -=curr_size;
+    }
+
+    return complement ? (uint16_t)~sum : sum;
+
 }
 
 

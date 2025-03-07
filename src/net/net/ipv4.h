@@ -15,7 +15,7 @@
 
 
 #define NET_VERSION_IPV4    4
-
+#define NET_IP_DEFAULT_TTL 64
 #pragma pack(1)
 typedef struct _ipv4_hdr_t {
     union {
@@ -52,8 +52,13 @@ typedef struct _ipv4_pkt_t {
 
 net_err_t ipv4_init(void);
 net_err_t ipv4_in(netif_t* netif,pktbuf_t* buf);
+net_err_t ipv4_out(uint8_t protocol,ipaddr_t *dest,ipaddr_t* src,pktbuf_t *buf);
 static inline int ipv4_hdr_size(ipv4_pkt_t * pkt) {
     return pkt->hdr.shdr * 4;
+}
+
+static inline void ipv4_set_hdr_size(ipv4_pkt_t * pkt,int len) {
+    pkt->hdr.shdr = len / 4;
 }
 
 #endif //IPV4_H
