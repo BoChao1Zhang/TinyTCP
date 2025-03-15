@@ -49,4 +49,9 @@
 #define ARP_ENTRY_STABLE_TMO    5
 #define ARP_ENTRY_PENDING_TMO   3
 #define ARP_ENTRY_RETRY_CNT     5
+
+
+//IP 协议
+#define IP_FRAGS_MAX_NR         5
+
 #endif //NET_CFG_H

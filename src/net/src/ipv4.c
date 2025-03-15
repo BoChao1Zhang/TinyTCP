@@ -6,13 +6,14 @@
 
 #include "dbg.h"
 #include "icmpv4.h"
+#include "mblock.h"
 #include "protocol.h"
 #include "tools.h"
-
-#if DBG_DISP_ENABLED(DBG_IP)
-
 static uint16_t packet_id = 0;
-
+static ip_frag_t frag_array[IP_FRAGS_MAX_NR];
+static mblock_t frag_mblock;
+static nlist_t frag_list;
+#if DBG_DISP_ENABLED(DBG_IP)
 static void display_ip_packet(ipv4_pkt_t* pkt) {
     ipv4_hdr_t* ip_hdr = (ipv4_hdr_t*)&pkt->hdr;
 
@@ -33,10 +34,23 @@ static void display_ip_packet(ipv4_pkt_t* pkt) {
 #define display_ip_packet(pkt)
 #endif
 
+static net_err_t frag_init(void) {
+    nlist_init(&frag_list);
+    mblock_init(&frag_mblock,frag_array,sizeof(ip_frag_t),IP_FRAGS_MAX_NR,NLOCKER_NONE);
+
+    return NET_ERR_OK;
+}
 
 net_err_t ipv4_init(void)
 {
     dbg_info(DBG_IP,"init ip \n");
+
+    net_err_t err = frag_init();
+    if (err < 0) {
+        dbg_error(DBG_IP,"init frag err\n");
+        return err;
+    }
+
     dbg_info(DBG_IP,"init done \n");
 
 
@@ -102,6 +116,9 @@ static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipa
             break;
         }
         case NET_PROTOCOL_UDP: {
+            //为什么这里要进行大小端的转化？
+            iphdr_htons(pkt);
+            icmpv4_out_unreach(src_ip,&netif->ipaddr,3,buf);
             break;
         }
         default: {
