@@ -39,17 +39,17 @@ typedef struct _ipv4_hdr_t {
         uint16_t frag_all;
 #if NET_ENDIAN_LITTLE
         struct {
-            uint16_t offset:13;
+            uint16_t frag_offset:13;
             uint16_t more : 1;
             uint16_t disable: 1;
-            uint16_t reversed;
+            uint16_t reverse: 1;
         };
 #else
         struct {
             uint16_t rversed:1;
             uint16_t disable:1;
             uint16_t more:1;
-            uint16_t offset:13;
+            uint16_t frag_offset:13;
         };
 #endif
     };
@@ -73,7 +73,7 @@ typedef struct _ipv4_pkt_t {
 typedef struct _ip_frag_t {
     ipaddr_t ip;
     uint16_t id;
-
+    int tmo;
     nlist_t buf_list;
     nlist_node_t node;
 }ip_frag_t;

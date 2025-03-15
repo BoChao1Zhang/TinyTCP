@@ -23,6 +23,8 @@ static void display_ip_packet(ipv4_pkt_t* pkt) {
     plat_printf("    Totoal len: %d bytes\n", ip_hdr->total_len);
     plat_printf("    Id:%d\n", ip_hdr->id);
     plat_printf("    TTL: %d\n", ip_hdr->ttl);
+    plat_printf("    frag offset: %d\n",ip_hdr->frag_offset);
+    plat_printf("    frag more: %d\n",ip_hdr->more);
     plat_printf("    Protocol: %d\n", ip_hdr->protocol);
     plat_printf("    Header checksum: 0x%04x\n", ip_hdr->hdr_checksum);
     dbg_dump_ip_buf(DBG_IP, "    src ip:", ip_hdr->dest_ip);
@@ -39,6 +41,32 @@ static net_err_t frag_init(void) {
     mblock_init(&frag_mblock,frag_array,sizeof(ip_frag_t),IP_FRAGS_MAX_NR,NLOCKER_NONE);
 
     return NET_ERR_OK;
+}
+
+static void frag_free_buf_list(ip_frag_t * frag) {
+    nlist_node_t *node;
+    while (node = nlist_remove_first(&frag->buf_list)) {
+        pktbuf_t *buf = nlist_entry(node,pktbuf_t,node);
+        pktbuf_free(buf);
+    }
+}
+
+static ip_frag_t* frag_alloc(void) {
+    ip_frag_t* frag = mblock_alloc(&frag_mblock,-1);
+    if (!frag) {
+        nlist_node_t * node = nlist_remove_last(&frag_list);
+        frag = nlist_entry(node,ip_frag_t,node);
+        if (frag) {
+            frag_free_buf_list(frag);
+        }
+    }
+    return frag;
+}
+
+static void frag_free(ip_frag_t* frag) {
+    frag_free_buf_list(frag);
+    nlist_remove(&frag_list,&frag->node);
+    mblock_free(&frag_mblock,frag);
 }
 
 net_err_t ipv4_init(void)
@@ -99,6 +127,42 @@ static void iphdr_htons(ipv4_pkt_t *pkt) {
 
 }
 
+static ip_frag_t *frag_find(ipaddr_t *ip,uint16_t id) {
+    nlist_node_t *curr;
+    nlist_foreach(curr,&frag_list) {
+        ip_frag_t * frag = nlist_entry(curr,ip_frag_t,node);
+        if (ipaddr_is_equal(ip,&frag->ip) && (id == frag->id)) {
+            nlist_remove(&frag_list,&frag->node);
+            nlist_insert_first(&frag_list,&frag->node);
+            return frag;
+        }
+    }
+
+    return (ip_frag_t *)0;
+}
+
+static void frag_add(ip_frag_t *frag,ipaddr_t *ip,uint16_t id) {
+    ipaddr_copy(&frag->ip,ip);
+    frag->tmo = 0;
+    frag->id = id;
+    nlist_node_init(&frag->node);
+
+    nlist_insert_first(&frag_list,&frag->node);
+}
+
+static net_err_t ip_frag_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipaddr_t *dest_ip) {
+    ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+    ip_frag_t *frag = frag_find(src_ip,pkt->hdr.id);
+
+    if (!frag) {
+        frag = frag_alloc();
+        frag_add(frag,src_ip,pkt->hdr.id);
+    }
+
+    return NET_ERR_OK;
+}
+
+//处理的是一个完整的数据包
 static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipaddr_t *dest_ip) {
     ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
     display_ip_packet(pkt);
@@ -117,8 +181,8 @@ static net_err_t ip_normal_in(netif_t *netif,pktbuf_t *buf,ipaddr_t *src_ip, ipa
         }
         case NET_PROTOCOL_UDP: {
             //为什么这里要进行大小端的转化？
-            iphdr_htons(pkt);
-            icmpv4_out_unreach(src_ip,&netif->ipaddr,3,buf);
+            // iphdr_htons(pkt);
+            // icmpv4_out_unreach(src_ip,&netif->ipaddr,3,buf);
             break;
         }
         default: {
@@ -164,7 +228,12 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
         return NET_ERR_UNREACH;
     }
 
-    err = ip_normal_in(netif,buf,&src_ip,&dest_ip);
+    if (pkt->hdr.frag_offset || pkt->hdr.more) {
+        err = ip_frag_in(netif,buf,&src_ip,&dest_ip);
+    } else {
+        err = ip_normal_in(netif,buf,&src_ip,&dest_ip);
+    }
+
     return err;
 }
 
